@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { useActivity } from '@/paymesh/ActivityProvider'
+import { useActivity } from '@/paymesh/activityContext'
 import { SOURCE_LABELS } from '@/paymesh/contracts'
 import { decodeCategory, fmtCompactUsdc, fmtUsdc, shortAddress } from '@/paymesh/format'
 import { DAY, bucketize, sumBy, totalsBetween, uniqueWallets } from '@/paymesh/metrics'
 import { BarChart } from '@/components/charts'
-import { useNow } from '@/components/TransactionFeed'
+import { useNow } from '@/paymesh/useNow'
 import { Card, EmptyState, NotDeployed, PageHeader, Skeleton } from '@/components/ui'
 
 function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {

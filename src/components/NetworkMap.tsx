@@ -1,8 +1,12 @@
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { Address } from 'viem'
-import type { Settlement } from '@/paymesh/ActivityProvider'
+import type { Settlement } from '@/paymesh/activityContext'
 import { fmtUsdc, shortAddress } from '@/paymesh/format'
+import { FRESH_SECONDS } from '@/paymesh/metrics'
+import { useNow } from '@/paymesh/useNow'
 import { MAP_CELL, MAP_COLS, MAP_H, MAP_ROW_HEX, MAP_W } from './worldMask'
+
+const REDUCE_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 interface Node {
   address: Address
@@ -36,6 +40,18 @@ const { CELLS, BASE, GLOW, BRIGHT } = (() => {
   return { CELLS: cells, BASE: base.join(''), GLOW: glow.join(''), BRIGHT: bright.join('') }
 })()
 
+/** Static land dots. Memoised so the thousands of map points are never re-diffed when payments or the clock update. */
+const LandLayers = memo(function LandLayers() {
+  return (
+    <g mask="url(#mapMask)">
+      <path d={BASE} stroke="#4c3fb0" strokeOpacity="0.62" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d={GLOW} className="pm-twinkle" stroke="#8f7dff" strokeOpacity="0.8" strokeWidth="2.3" strokeLinecap="round" fill="none" />
+      <path d={BRIGHT} stroke="#e4ddff" strokeOpacity="0.95" strokeWidth="2.6" strokeLinecap="round" fill="none" filter="url(#glow)" />
+      {!REDUCE_MOTION && <path d={GLOW} stroke="#e4ddff" strokeOpacity="0.95" strokeWidth="2.8" strokeLinecap="round" fill="none" mask="url(#sweepMask)" />}
+    </g>
+  )
+})
+
 function place(address: string): { x: number; y: number } {
   const h = parseInt(address.toLowerCase().replace('0x', '').slice(0, 8), 16)
   const [x, y] = CELLS[h % CELLS.length]
@@ -44,6 +60,7 @@ function place(address: string): { x: number; y: number } {
 
 export function NetworkMap({ settlements, me, loading }: { settlements: Settlement[]; me?: Address; loading: boolean }) {
   const [hover, setHover] = useState<Address | null>(null)
+  const nowSec = useNow(2000) / 1000
 
   const { nodes, edges } = useMemo(() => {
     const recent = settlements.filter((s) => s.from.toLowerCase() !== s.to.toLowerCase()).slice(0, 40)
@@ -77,11 +94,19 @@ export function NetworkMap({ settlements, me, loading }: { settlements: Settleme
         mine: Boolean(me) && s.from.toLowerCase() === me?.toLowerCase(),
         from: s.from,
         to: s.to,
+        toX: b.x,
+        toY: b.y,
+        amount: s.amount,
+        timestamp: s.timestamp,
       }
     })
     return { nodes: [...map.values()], edges: edgeList }
   }, [settlements, me])
 
+  const isFresh = (ts: number | undefined) => ts !== undefined && nowSec - ts < FRESH_SECONDS
+  const freshEdges = edges.filter((e) => isFresh(e.timestamp)).slice(0, 6)
+  const freshIds = new Set(freshEdges.map((e) => e.id))
+  const freshNodes = new Set(freshEdges.flatMap((e) => [e.from.toLowerCase(), e.to.toLowerCase()]))
   const hovered = nodes.find((n) => n.address === hover)
   const labelled = new Set([...nodes].sort((a, b) => b.count - a.count).slice(0, 8).map((n) => n.address))
 
@@ -105,6 +130,14 @@ export function NetworkMap({ settlements, me, loading }: { settlements: Settleme
             <stop offset="0" stopColor="#a78bfa" />
             <stop offset="1" stopColor="#7dd3fc" />
           </linearGradient>
+          <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#000" />
+            <stop offset="0.5" stopColor="#fff" />
+            <stop offset="1" stopColor="#000" />
+          </linearGradient>
+          <mask id="sweepMask" maskUnits="userSpaceOnUse" x="0" y="0" width={MAP_W} height={MAP_H}>
+            <rect className="pm-sweep" x="0" y="0" width="200" height={MAP_H} fill="url(#band)" />
+          </mask>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2.6" result="b" />
             <feMerge>
@@ -114,27 +147,53 @@ export function NetworkMap({ settlements, me, loading }: { settlements: Settleme
           </filter>
         </defs>
 
-        <g mask="url(#mapMask)">
-          <path d={BASE} stroke="#4c3fb0" strokeOpacity="0.62" strokeWidth="2" strokeLinecap="round" fill="none" />
-          <path d={GLOW} stroke="#8f7dff" strokeOpacity="0.8" strokeWidth="2.3" strokeLinecap="round" fill="none" />
-          <path d={BRIGHT} stroke="#e4ddff" strokeOpacity="0.95" strokeWidth="2.6" strokeLinecap="round" fill="none" filter="url(#glow)" />
-        </g>
+        <LandLayers />
 
-        {edges.map((e) => (
-          <g key={e.id}>
-            <path d={e.d} fill="none" stroke={e.mine ? '#22d3ee' : 'url(#route)'} strokeOpacity="0.4" strokeWidth="1.2" />
-            <path d={e.d} fill="none" stroke={e.mine ? '#67e8f9' : '#d8ccff'} strokeWidth="1.8" strokeLinecap="round" strokeDasharray="10 38" className="animate-flow" filter="url(#glow)">
-              <title>{`${shortAddress(e.from)} to ${shortAddress(e.to)}`}</title>
-            </path>
-          </g>
+        {edges.map((e, i) => {
+          const fresh = freshIds.has(e.id)
+          const tone = e.mine ? '#67e8f9' : '#d8ccff'
+          return (
+            <g key={e.id}>
+              <path d={e.d} fill="none" stroke={e.mine ? '#22d3ee' : 'url(#route)'} strokeOpacity={fresh ? 0.7 : 0.4} strokeWidth={fresh ? 1.8 : 1.2} />
+              <path d={e.d} fill="none" stroke={tone} strokeWidth="1.8" strokeLinecap="round" strokeDasharray="10 38" className="animate-flow" filter="url(#glow)">
+                <title>{`${shortAddress(e.from)} to ${shortAddress(e.to)}`}</title>
+              </path>
+              {fresh && <path d={e.d} pathLength="1" fill="none" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" className="pm-draw" filter="url(#glow)" />}
+              {!REDUCE_MOTION && (
+                <>
+                  <circle r={fresh ? 3.4 : 2.1} fill="#ffffff" filter="url(#glow)">
+                    <animateMotion dur={`${fresh ? 1.5 : 3.6 + (i % 5) * 0.45}s`} begin={`${(i % 7) * 0.55}s`} repeatCount="indefinite" path={e.d} />
+                  </circle>
+                  {fresh && (
+                    <circle r="2" fill={tone} opacity="0.8" filter="url(#glow)">
+                      <animateMotion dur="1.5s" begin="0.14s" repeatCount="indefinite" path={e.d} />
+                    </circle>
+                  )}
+                </>
+              )}
+            </g>
+          )
+        })}
+
+        {freshEdges.map((e) => (
+          <text key={`amt-${e.id}`} x={e.toX} y={e.toY - 14} textAnchor="middle" fontSize="11" fontWeight="700" fill="#7dd3fc" stroke="#04050d" strokeWidth="3" className="pm-float" style={{ paintOrder: 'stroke' }}>
+            +{fmtUsdc(e.amount)} USDC
+          </text>
         ))}
 
         {nodes.map((n) => {
           const isMe = Boolean(me) && n.address.toLowerCase() === me?.toLowerCase()
           const r = 3.2 + Math.min(4, n.count * 0.6)
+          const lit = freshNodes.has(n.address.toLowerCase())
           return (
             <g key={n.address} onMouseEnter={() => setHover(n.address)} onMouseLeave={() => setHover(null)} style={{ cursor: 'pointer' }}>
-              <circle cx={n.x} cy={n.y} r={r + 7} fill={isMe ? '#22d3ee' : '#8b5cf6'} opacity="0.16" />
+              {lit && !REDUCE_MOTION && (
+                <>
+                  <circle cx={n.x} cy={n.y} r={r + 2} fill="none" stroke={isMe ? '#22d3ee' : '#c4b5fd'} strokeWidth="1.6" className="pm-ripple" />
+                  <circle cx={n.x} cy={n.y} r={r + 2} fill="none" stroke="#ffffff" strokeWidth="1" className="pm-ripple pm-ripple-b" />
+                </>
+              )}
+              <circle cx={n.x} cy={n.y} r={r + 7} fill={isMe ? '#22d3ee' : '#8b5cf6'} opacity={lit ? 0.4 : 0.16} className={lit ? 'pm-node-flash' : undefined} />
               <circle cx={n.x} cy={n.y} r={r} fill={isMe ? '#22d3ee' : '#b9a6ff'} filter="url(#glow)" />
               <circle cx={n.x} cy={n.y} r={Math.max(1.2, r - 2)} fill="#fff" />
               {(labelled.has(n.address) || isMe) && (

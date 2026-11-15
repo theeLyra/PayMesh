@@ -183,3 +183,125 @@ body {
     background-position: 0% 0;
   }
 }
+
+/* Live transaction effects */
+.pm-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: pm-draw 1.3s cubic-bezier(0.3, 0.6, 0.2, 1) forwards;
+}
+.pm-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: pm-ripple 1.9s ease-out 4 backwards;
+}
+.pm-ripple-b {
+  animation-delay: 0.45s;
+}
+.pm-node-flash {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pm-flash 1.1s ease-in-out infinite alternate;
+}
+.pm-float {
+  animation: pm-float 3.4s ease-out forwards;
+}
+.pm-sweep {
+  animation: pm-sweep 9s linear infinite;
+}
+.pm-twinkle {
+  animation: pm-twinkle 3.4s ease-in-out infinite alternate;
+}
+.pm-twinkle-b {
+  animation-delay: 1.7s;
+}
+.pm-row-new {
+  animation:
+    pm-row-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    pm-row-glow 2.8s ease-out both;
+}
+.pm-glow {
+  animation: pm-card-glow 2.4s ease-out;
+}
+
+@keyframes pm-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes pm-ripple {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(6);
+    opacity: 0;
+  }
+}
+@keyframes pm-flash {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.7);
+  }
+}
+@keyframes pm-float {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  14% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+}
+@keyframes pm-sweep {
+  from {
+    transform: translateX(-220px);
+  }
+  to {
+    transform: translateX(1060px);
+  }
+}
+@keyframes pm-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pm-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pm-row-glow {
+  0% {
+    background: rgba(139, 92, 246, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.9), inset 0 0 34px rgba(139, 92, 246, 0.5);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px transparent, inset 0 0 0 transparent;
+  }
+}
+@keyframes pm-card-glow {
+  0% {
+    box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.9), 0 0 44px rgba(103, 232, 249, 0.55);
+  }
+  100% {
+    box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+}

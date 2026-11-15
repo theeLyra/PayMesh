@@ -1,26 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePublicClient } from 'wagmi'
 import type { Address, Hex } from 'viem'
 import { settledEvent } from './abis'
+import { ActivityContext, type ActivityState, type IndexProgress, type Settlement } from './activityContext'
 import { CHAIN_ID } from './chain'
 import { ANY_DEPLOYED, DEPLOYED_ADDRESSES, START_BLOCK } from './contracts'
-
-/** One verified USDC settlement, read from a Settled log emitted by a PayMesh contract. */
-export interface Settlement {
-  id: string
-  txHash: Hex
-  blockNumber: number
-  logIndex: number
-  contract: Address
-  from: Address
-  to: Address
-  amount: bigint
-  category: Hex
-  source: number
-  ref: bigint
-  /** Block timestamp in seconds. Undefined until the block has been fetched. */
-  timestamp?: number
-}
 
 interface StoredRecord {
   id: string
@@ -43,33 +27,10 @@ interface Store {
   times: Record<string, number>
 }
 
-export interface IndexProgress {
-  from: number
-  current: number
-  head: number
-}
-
-interface ActivityState {
-  deployed: boolean
-  settlements: Settlement[]
-  status: 'idle' | 'indexing' | 'ready' | 'error'
-  error?: string
-  head?: number
-  progress?: IndexProgress
-  /** First block of the window that has been indexed. */
-  windowStart?: number
-  /** Measured average block interval over the last blocks, in seconds. */
-  blockTimeSec?: number
-  /** True when some settlements still lack a block timestamp, so time-windowed totals may be partial. */
-  timesPartial: boolean
-  updatedAt?: number
-  refresh: () => void
-}
-
 const LOOKBACK_BLOCKS = 300_000
 const MAX_RECORDS = 3000
 const MAX_TIME_FETCH_PER_RUN = 120
-const POLL_MS = 8000
+const POLL_MS = 3000
 const storeKey = () => `paymesh:index:v1:${CHAIN_ID}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
 
 function loadStore(): Store {
@@ -100,18 +61,20 @@ const toSettlement = (r: StoredRecord, times: Record<string, number>): Settlemen
   timestamp: times[String(r.blockNumber)],
 })
 
-type Client = NonNullable<ReturnType<typeof usePublicClient>>
+const byNewest = (a: Settlement, b: Settlement) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
+const byNewestStored = (a: StoredRecord, b: StoredRecord) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
+const buildList = (store: Store) => store.records.map((r) => toSettlement(r, store.times)).sort(byNewest)
 
-const ActivityContext = createContext<ActivityState | null>(null)
+type Client = NonNullable<ReturnType<typeof usePublicClient>>
 
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const client = usePublicClient({ chainId: CHAIN_ID })
   const running = useRef(false)
   const lastBlockTimeAt = useRef(0)
-  const [settlements, setSettlements] = useState<Settlement[]>(() => {
-    const s = loadStore()
-    return s.records.map((r) => toSettlement(r, s.times)).sort(byNewest)
-  })
+  /** The index lives in memory between polls so nothing is re-parsed from storage each time. */
+  const [initialStore] = useState(loadStore)
+  const storeRef = useRef<Store>(initialStore)
+  const [settlements, setSettlements] = useState<Settlement[]>(() => buildList(initialStore))
   const [status, setStatus] = useState<ActivityState['status']>('idle')
   const [error, setError] = useState<string>()
   const [head, setHead] = useState<number>()
@@ -124,29 +87,38 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     if (!client || !ANY_DEPLOYED || running.current) return
     running.current = true
     try {
-      const store = loadStore()
+      const store = storeRef.current
       const chainHead = Number(await client.getBlockNumber())
-      setHead(chainHead)
+      setHead((h) => (h === chainHead ? h : chainHead))
       const floor = Math.max(START_BLOCK ?? 0, chainHead - LOOKBACK_BLOCKS, 0)
       const from = Math.max(store.lastBlock + 1, floor)
-      setWindowStart(floor)
+      setWindowStart((w) => (w === floor ? w : floor))
+      let changed = false
 
       if (from <= chainHead) {
         if (chainHead - from > 2000) setStatus('indexing')
         const found = await scanRange(client, from, chainHead, (current) => setProgress({ from, current, head: chainHead }))
-        const known = new Set(store.records.map((r) => r.id))
-        for (const rec of found) if (!known.has(rec.id)) store.records.push(rec)
-        store.records = store.records.filter((r) => r.blockNumber >= floor).sort(byNewestStored).slice(0, MAX_RECORDS)
+        if (found.length > 0) {
+          const known = new Set(store.records.map((r) => r.id))
+          for (const rec of found) if (!known.has(rec.id)) store.records.push(rec)
+          store.records = store.records.filter((r) => r.blockNumber >= floor).sort(byNewestStored).slice(0, MAX_RECORDS)
+          changed = true
+        }
         store.lastBlock = chainHead
       }
 
-      await fillTimestamps(client, store)
+      if (await fillTimestamps(client, store)) changed = true
       if (Date.now() - lastBlockTimeAt.current > 60_000) {
         lastBlockTimeAt.current = Date.now()
         setBlockTimeSec(await measureBlockTime(client, chainHead))
       }
-      saveStore(store)
-      setSettlements(store.records.map((r) => toSettlement(r, store.times)).sort(byNewest))
+      // Only touch storage and React state when something actually changed.
+      if (changed) {
+        saveStore(store)
+        setSettlements(buildList(store))
+      } else if (from <= chainHead) {
+        saveStore(store)
+      }
       setProgress(undefined)
       setError(undefined)
       setStatus('ready')
@@ -162,41 +134,31 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ANY_DEPLOYED) return
     const first = setTimeout(() => void run(), 0)
-    const timer = setInterval(() => void run(), POLL_MS)
+    // Poll quickly while the tab is visible and pause entirely while it is hidden.
+    const timer = setInterval(() => {
+      if (!document.hidden) void run()
+    }, POLL_MS)
+    const onVisible = () => {
+      if (!document.hidden) void run()
+    }
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       clearTimeout(first)
       clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [run])
 
+  const refresh = useCallback(() => void run(), [run])
+  const timesPartial = useMemo(() => settlements.some((s) => s.timestamp === undefined), [settlements])
+
   const value = useMemo<ActivityState>(
-    () => ({
-      deployed: ANY_DEPLOYED,
-      settlements,
-      status,
-      error,
-      head,
-      progress,
-      windowStart,
-      blockTimeSec,
-      timesPartial: settlements.some((s) => s.timestamp === undefined),
-      updatedAt,
-      refresh: () => void run(),
-    }),
-    [settlements, status, error, head, progress, windowStart, blockTimeSec, updatedAt, run],
+    () => ({ deployed: ANY_DEPLOYED, settlements, status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh }),
+    [settlements, status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh],
   )
 
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>
 }
-
-export function useActivity(): ActivityState {
-  const ctx = useContext(ActivityContext)
-  if (!ctx) throw new Error('useActivity must be used inside ActivityProvider')
-  return ctx
-}
-
-const byNewest = (a: Settlement, b: Settlement) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
-const byNewestStored = (a: StoredRecord, b: StoredRecord) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
 
 /** Scans in adaptive chunks so a provider's block-range limit shrinks the step instead of failing. */
 async function scanRange(client: Client, from: number, to: number, onProgress: (current: number) => void): Promise<StoredRecord[]> {
@@ -231,7 +193,7 @@ async function scanRange(client: Client, from: number, to: number, onProgress: (
         })
       }
       cursor = end + 1
-      onProgress(cursor)
+      if (to - from > 2000) onProgress(cursor)
       step = Math.min(step * 2, 20_000)
     } catch (e) {
       if (step <= 200) throw e
@@ -241,7 +203,8 @@ async function scanRange(client: Client, from: number, to: number, onProgress: (
   return out
 }
 
-async function fillTimestamps(client: Client, store: Store) {
+/** Fetches missing block timestamps (newest first). Returns true when any were added. */
+async function fillTimestamps(client: Client, store: Store): Promise<boolean> {
   const missing: number[] = []
   const seen = new Set<number>()
   for (const r of store.records) {
@@ -251,13 +214,18 @@ async function fillTimestamps(client: Client, store: Store) {
       if (missing.length >= MAX_TIME_FETCH_PER_RUN) break
     }
   }
-  for (let i = 0; i < missing.length; i += 8) {
-    const batch = missing.slice(i, i + 8)
+  let added = false
+  for (let i = 0; i < missing.length; i += 12) {
+    const batch = missing.slice(i, i + 12)
     const blocks = await Promise.all(batch.map((n) => client.getBlock({ blockNumber: BigInt(n) }).catch(() => undefined)))
     blocks.forEach((b, idx) => {
-      if (b) store.times[String(batch[idx])] = Number(b.timestamp)
+      if (b) {
+        store.times[String(batch[idx])] = Number(b.timestamp)
+        added = true
+      }
     })
   }
+  return added
 }
 
 async function measureBlockTime(client: Client, head: number): Promise<number | undefined> {

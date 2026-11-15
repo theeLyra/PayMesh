@@ -1,6 +1,6 @@
 import { useAccount, useDisconnect } from 'wagmi'
 import { toast } from 'sonner'
-import { useActivity } from '@/paymesh/ActivityProvider'
+import { useActivity } from '@/paymesh/activityContext'
 import { CHAIN_FACTS, CHAIN_ID, RPC_URL, addressUrl } from '@/paymesh/chain'
 import { PAYMESH } from '@/paymesh/contracts'
 import { Badge, Button, Card, ExplorerLink, PageHeader } from '@/components/ui'

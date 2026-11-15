@@ -9,7 +9,7 @@ import type { PlanData } from '@/paymesh/types'
 import { useOwned } from '@/paymesh/useOwned'
 import { useTransact, useUsdcAllowance, useUsdcBalance } from '@/paymesh/useTransact'
 import { AmountInput, CategorySelect, FormError, amountError } from '@/components/forms'
-import { useNow } from '@/components/TransactionFeed'
+import { useNow } from '@/paymesh/useNow'
 import { Badge, Button, Card, EmptyState, Field, NotDeployed, PageHeader, Skeleton, WalletGate } from '@/components/ui'
 
 const INTERVALS = [
@@ -122,7 +122,7 @@ export default function ScheduledPayments() {
               <span className="text-pm-text/90">
                 Your USDC allowance ({fmtUsdc(allowance ?? 0n)}) is lower than your remaining scheduled payments ({fmtUsdc(outstanding)}). Payments will fail until you top it up.
               </span>
-              <Button onClick={() => void approveIfNeeded(PAYMESH!, outstanding)} busy={pending !== null}>
+              <Button onClick={() => void approveIfNeeded(PAYMESH!, outstanding, false)} busy={pending !== null}>
                 Approve {fmtUsdc(outstanding)} USDC
               </Button>
             </div>

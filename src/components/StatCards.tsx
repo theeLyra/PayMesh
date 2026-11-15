@@ -1,14 +1,14 @@
 import { useMemo, type ReactNode } from 'react'
 import { useAccount } from 'wagmi'
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { useActivity } from '@/paymesh/ActivityProvider'
+import { useActivity } from '@/paymesh/activityContext'
 import { fmtCompactUsdc } from '@/paymesh/format'
 import { DAY, bucketize, pctChange, totalsBetween } from '@/paymesh/metrics'
 import { useTxLog } from '@/paymesh/txlog'
 import { useOperations } from '@/paymesh/useTransact'
 import { Link } from '@/paymesh/router'
 import { MiniBars, Sparkline } from './charts'
-import { useNow } from './TransactionFeed'
+import { useNow } from '@/paymesh/useNow'
 import { Skeleton, cx } from './ui'
 
 function StatShell({ title, children }: { title: string; children: ReactNode }) {

@@ -9,7 +9,7 @@ import { ESCROW_STATUS, type EscrowData } from '@/paymesh/types'
 import { useOwned } from '@/paymesh/useOwned'
 import { useTransact, useUsdcBalance } from '@/paymesh/useTransact'
 import { AmountInput, CategorySelect, FormError, amountError } from '@/components/forms'
-import { useNow } from '@/components/TransactionFeed'
+import { useNow } from '@/paymesh/useNow'
 import { Badge, Button, Card, EmptyState, Field, NotDeployed, PageHeader, Skeleton, WalletGate } from '@/components/ui'
 
 const DURATIONS = [

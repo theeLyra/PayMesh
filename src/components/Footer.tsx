@@ -1,5 +1,5 @@
 import { ShieldCheck } from 'lucide-react'
-import { useActivity } from '@/paymesh/ActivityProvider'
+import { useActivity } from '@/paymesh/activityContext'
 import { CHAIN_FACTS } from '@/paymesh/chain'
 import { Link } from '@/paymesh/router'
 import { cx } from './ui'

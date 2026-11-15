@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, type ComponentType } from 'react'
+import { Suspense, lazy, useEffect, useState, type ComponentType, type LazyExoticComponent } from 'react'
 import { ActivityProvider } from '@/paymesh/ActivityProvider'
 import { usePath } from '@/paymesh/router'
 import { Footer } from '@/components/Footer'
@@ -6,19 +6,33 @@ import { MobileNav, Sidebar } from '@/components/Sidebar'
 import { TopBar } from '@/components/TopBar'
 import { Skeleton } from '@/components/ui'
 
-const pages: Record<string, ReturnType<typeof lazy<ComponentType>>> = {
-  '/': lazy(() => import('@/pages/Dashboard')),
-  '/transfers': lazy(() => import('@/pages/Transfers')),
-  '/recipients': lazy(() => import('@/pages/Recipients')),
-  '/links': lazy(() => import('@/pages/PaymentLinks')),
-  '/batch': lazy(() => import('@/pages/BatchPayments')),
-  '/scheduled': lazy(() => import('@/pages/ScheduledPayments')),
-  '/split': lazy(() => import('@/pages/SplitPayments')),
-  '/escrow': lazy(() => import('@/pages/EscrowPage')),
-  '/analytics': lazy(() => import('@/pages/Analytics')),
-  '/developers': lazy(() => import('@/pages/Developers')),
-  '/activity': lazy(() => import('@/pages/ActivityPage')),
-  '/settings': lazy(() => import('@/pages/SettingsPage')),
+const loaders: Record<string, () => Promise<{ default: ComponentType }>> = {
+  '/': () => import('@/pages/Dashboard'),
+  '/transfers': () => import('@/pages/Transfers'),
+  '/recipients': () => import('@/pages/Recipients'),
+  '/links': () => import('@/pages/PaymentLinks'),
+  '/batch': () => import('@/pages/BatchPayments'),
+  '/scheduled': () => import('@/pages/ScheduledPayments'),
+  '/split': () => import('@/pages/SplitPayments'),
+  '/escrow': () => import('@/pages/EscrowPage'),
+  '/analytics': () => import('@/pages/Analytics'),
+  '/developers': () => import('@/pages/Developers'),
+  '/activity': () => import('@/pages/ActivityPage'),
+  '/settings': () => import('@/pages/SettingsPage'),
+}
+
+const pages = Object.fromEntries(Object.entries(loaders).map(([path, load]) => [path, lazy(load)])) as Record<string, LazyExoticComponent<ComponentType>>
+
+/** Warm every page chunk once the first screen is idle so navigation feels instant. */
+function usePrefetchPages() {
+  useEffect(() => {
+    const warm = () => Object.values(loaders).forEach((load) => void load())
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+    const handle = idle ? idle(warm) : window.setTimeout(warm, 1500)
+    return () => {
+      if (!idle) window.clearTimeout(handle)
+    }
+  }, [])
 }
 
 function Routes() {
@@ -35,6 +49,7 @@ export default function App() {
   const [expanded, setExpanded] = useState(() => window.innerWidth >= 1100)
   const [moreOpen, setMoreOpen] = useState(false)
   const path = usePath()
+  usePrefetchPages()
   return (
     <ActivityProvider>
       <div className="flex min-h-dvh">

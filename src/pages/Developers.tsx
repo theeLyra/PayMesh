@@ -71,6 +71,7 @@ await wallet.writeContract({
                   <ExplorerLink href={addressUrl(PAYMESH)}>
                     <span className="break-all font-mono text-xs">{PAYMESH}</span>
                   </ExplorerLink>
+                  <ExplorerLink href={`${addressUrl(PAYMESH)}?tab=contract`}>Verified source</ExplorerLink>
                   <Button variant="ghost" className="ml-auto min-h-[36px] px-3 text-xs" onClick={() => void copy(JSON.stringify(paymeshAbi, null, 2), 'ABI')}>
                     <Copy className="h-3.5 w-3.5" /> ABI
                   </Button>

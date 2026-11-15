@@ -1,21 +1,13 @@
-import { useEffect, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ExternalLink } from 'lucide-react'
 import type { Address } from 'viem'
-import type { Settlement } from '@/paymesh/ActivityProvider'
+import type { Settlement } from '@/paymesh/activityContext'
 import { txUrl } from '@/paymesh/chain'
 import { SOURCE_LABELS } from '@/paymesh/contracts'
 import { decodeCategory, fmtUsdc, shortAddress, timeAgo } from '@/paymesh/format'
 import { Link } from '@/paymesh/router'
+import { FRESH_SECONDS } from '@/paymesh/metrics'
+import { useNow } from '@/paymesh/useNow'
 import { Skeleton, cx } from './ui'
-
-export function useNow(intervalMs = 5000) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), intervalMs)
-    return () => clearInterval(t)
-  }, [intervalMs])
-  return now
-}
 
 export function FeedRow({ s, me, now }: { s: Settlement; me?: Address; now: number }) {
   const mine = me?.toLowerCase()
@@ -24,8 +16,9 @@ export function FeedRow({ s, me, now }: { s: Settlement; me?: Address; now: numb
   const Icon = sent ? ArrowUpRight : received ? ArrowDownLeft : ArrowLeftRight
   const counterparty = sent ? s.to : s.from
   const heading = sent ? 'You sent' : received ? 'Received' : 'Network payment'
+  const fresh = s.timestamp !== undefined && now / 1000 - s.timestamp < FRESH_SECONDS
   return (
-    <li className="group flex items-start gap-3 px-4 py-3 transition hover:bg-white/[0.03]">
+    <li className={cx('group flex items-start gap-3 px-4 py-3 transition hover:bg-white/[0.03]', fresh && 'pm-row-new')}>
       <div
         className={cx(
           'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border',
@@ -79,7 +72,7 @@ interface FeedProps {
 }
 
 export function TransactionFeed({ settlements, me, limit = 6, loading, deployed, error }: FeedProps) {
-  const now = useNow()
+  const now = useNow(3000)
   const rows = settlements.slice(0, limit)
   return (
     <aside className="glass flex h-full min-h-[360px] flex-col overflow-hidden rounded-2xl">

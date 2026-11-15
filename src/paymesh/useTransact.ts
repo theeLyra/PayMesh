@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { erc20Abi, type Abi, type Address, type Hex } from 'viem'
 import { toast } from 'sonner'
 import { paymeshAbi } from './abis'
-import { useActivity } from './ActivityProvider'
+import { useActivity } from './activityContext'
 import { CHAIN_ID, USDC_ADDRESS } from './chain'
 import { PAYMESH } from './contracts'
 import { parseOnchainError } from './format'
@@ -32,8 +32,9 @@ export function useTransact() {
   const queryClient = useQueryClient()
   const [pending, setPending] = useState<string | null>(null)
 
-  const transact = useCallback(
-    async (label: string, req: WriteRequest): Promise<TxResult> => {
+  /** Runs one write. `hold` keeps the busy state on after success so a follow-up transaction in the same flow never lets the button flicker. */
+  const runTx = useCallback(
+    async (label: string, req: WriteRequest, hold: boolean): Promise<TxResult> => {
       if (!address) {
         toast.error('Connect your wallet first.')
         return { ok: false }
@@ -43,17 +44,21 @@ export function useTransact() {
         return { ok: false }
       }
       setPending(label)
+      let keepBusy = false
       try {
         if (chainId !== CHAIN_ID) await switchChainAsync({ chainId: CHAIN_ID })
         const hash = await writeContractAsync({ ...req, chainId: CHAIN_ID })
         recordSubmit(address, { hash, label, submittedAt: Date.now() })
-        const receipt = await publicClient.waitForTransactionReceipt({ hash })
+        // Arc confirms in well under a second, so poll the receipt quickly instead of using the 4 second default.
+        const receipt = await publicClient.waitForTransactionReceipt({ hash, pollingInterval: 400 })
         const ok = receipt.status === 'success'
         recordResult(address, hash, ok, Date.now())
         if (ok) toast.success(`${label} confirmed`)
         else toast.error(`${label} was reverted onchain`)
+        // Refresh the feed and every read in the background; the UI does not wait for them.
         refresh()
-        await queryClient.invalidateQueries()
+        void queryClient.invalidateQueries()
+        keepBusy = ok && hold
         return { ok, hash }
       } catch (e) {
         const message = parseOnchainError(e)
@@ -61,32 +66,49 @@ export function useTransact() {
         else toast.error(message)
         return { ok: false }
       } finally {
-        setPending(null)
+        if (!keepBusy) setPending(null)
       }
     },
     [address, chainId, publicClient, switchChainAsync, writeContractAsync, refresh, queryClient],
   )
 
-  /** Approves exactly `needed` USDC for `spender` when the current allowance is lower. Returns true when funds can be pulled. */
+  const transact = useCallback((label: string, req: WriteRequest) => runTx(label, req, false), [runTx])
+
+  /**
+   * Approves exactly `needed` USDC for `spender` when the current allowance is lower. Returns true when funds can be pulled.
+   * By default the busy state stays on after a successful approval because the caller sends its own transaction next.
+   * Pass `thenSend = false` when the approval is the whole action.
+   */
   const approveIfNeeded = useCallback(
-    async (spender: Address, needed: bigint): Promise<boolean> => {
+    async (spender: Address, needed: bigint, thenSend = true): Promise<boolean> => {
       if (!address || !publicClient) return false
-      const current = await publicClient.readContract({
-        address: USDC_ADDRESS,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [address, spender],
-      })
-      if (current >= needed) return true
-      const res = await transact('USDC approval', {
-        address: USDC_ADDRESS,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [spender, needed],
-      })
+      // Lock the button immediately so a fast double click cannot start two flows.
+      setPending('Checking approval')
+      let current: bigint
+      try {
+        current = await publicClient.readContract({
+          address: USDC_ADDRESS,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [address, spender],
+        })
+      } catch {
+        setPending(null)
+        toast.error('Network issue. Check your connection and retry.')
+        return false
+      }
+      if (current >= needed) {
+        if (!thenSend) setPending(null)
+        return true
+      }
+      const res = await runTx(
+        'USDC approval',
+        { address: USDC_ADDRESS, abi: erc20Abi, functionName: 'approve', args: [spender, needed] },
+        thenSend,
+      )
       return res.ok
     },
-    [address, publicClient, transact],
+    [address, publicClient, runTx],
   )
 
   return { transact, approveIfNeeded, pending }

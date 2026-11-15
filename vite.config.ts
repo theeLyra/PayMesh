@@ -34,6 +34,21 @@ export default defineConfig({
       'vite-plugin-node-polyfills/shims/process',
     ],
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // Long-lived vendor chunks cache between visits and download in parallel.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
+          if (/node_modules\/(viem|abitype|ox|@noble|@scure)\//.test(id)) return 'viem'
+          if (/node_modules\/(wagmi|@wagmi|@tanstack)\//.test(id)) return 'wagmi'
+          return undefined
+        },
+      },
+    },
+  },
   server: {
     allowedHosts: true,
     cors: true,

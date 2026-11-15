@@ -1,14 +1,15 @@
 import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { Globe } from 'lucide-react'
-import { useActivity } from '@/paymesh/ActivityProvider'
+import { useActivity, type Settlement } from '@/paymesh/activityContext'
 import { NetworkMap } from '@/components/NetworkMap'
 import { StatCards } from '@/components/StatCards'
-import { TransactionFeed, useNow } from '@/components/TransactionFeed'
+import { TransactionFeed } from '@/components/TransactionFeed'
+import { useNow } from '@/paymesh/useNow'
 import { NetworkPill, ProfileCard } from '@/components/TopBar'
 import { Sparkline } from '@/components/charts'
 import { NotDeployed, cx } from '@/components/ui'
-import { bucketize, uniqueWallets } from '@/paymesh/metrics'
+import { FRESH_SECONDS, bucketize, uniqueWallets } from '@/paymesh/metrics'
 
 function SystemStatus() {
   const { status, deployed, head } = useActivity()
@@ -26,6 +27,27 @@ function SystemStatus() {
     >
       <span className={cx('h-2 w-2 rounded-full', state === 'good' ? 'bg-pm-good shadow-[0_0_8px_#34d399]' : state === 'warn' ? 'bg-pm-warn' : 'bg-pm-bad')} />
       {text}
+    </div>
+  )
+}
+
+/** Owns the 1 second clock so the rest of the dashboard does not re-render every tick. */
+function LiveTransfers({ settlements, deployed }: { settlements: Settlement[]; deployed: boolean }) {
+  const nowSec = Math.floor(useNow(1000) / 1000)
+  const live = useMemo(() => bucketize(settlements, nowSec - 3600, nowSec + 30, 12), [settlements, nowSec])
+  const lastHour = live.count.reduce((a, b) => a + b, 0)
+  const newest = settlements[0]?.timestamp
+  const hot = newest !== undefined && nowSec - newest < FRESH_SECONDS
+  return (
+    <div key={hot ? newest : 'idle'} className={cx('glass rounded-2xl p-4', hot && 'pm-glow')}>
+      <div className="label">Live transfers</div>
+      <div className="mt-1 flex items-center justify-between gap-4">
+        <div className="tabular font-display text-[32px] font-bold leading-none text-[#7dd3fc]">{deployed ? lastHour.toLocaleString('en-US') : '—'}</div>
+        <div className="w-28">
+          <Sparkline values={live.count} height={36} color="#a78bfa" />
+        </div>
+      </div>
+      <div className="mt-1.5 text-xs text-pm-muted">Settled in the last 60 minutes</div>
     </div>
   )
 }
@@ -51,11 +73,8 @@ function GlobeRing() {
 export default function Dashboard() {
   const { address } = useAccount()
   const { settlements, status, deployed, error, progress, windowStart } = useActivity()
-  const nowSec = Math.floor(useNow(15_000) / 1000)
   const loading = deployed && status !== 'ready' && status !== 'error' && settlements.length === 0
 
-  const live = useMemo(() => bucketize(settlements, nowSec - 3600, nowSec + 30, 12), [settlements, nowSec])
-  const lastHour = live.count.reduce((a, b) => a + b, 0)
   const wallets = useMemo(() => uniqueWallets(settlements), [settlements])
 
   return (
@@ -76,16 +95,7 @@ export default function Dashboard() {
           <SystemStatus />
           <NetworkPill />
         </div>
-        <div className="glass rounded-2xl p-4">
-          <div className="label">Live transfers</div>
-          <div className="mt-1 flex items-center justify-between gap-4">
-            <div className="tabular font-display text-[32px] font-bold leading-none text-[#7dd3fc]">{deployed ? lastHour.toLocaleString('en-US') : '—'}</div>
-            <div className="w-28">
-              <Sparkline values={live.count} height={36} color="#a78bfa" />
-            </div>
-          </div>
-          <div className="mt-1.5 text-xs text-pm-muted">Settled in the last 60 minutes</div>
-        </div>
+        <LiveTransfers settlements={settlements} deployed={deployed} />
       </div>
 
       {/* Map */}
