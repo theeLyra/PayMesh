@@ -1,0 +1,52 @@
+import { parseAbi } from 'viem'
+
+export const SETTLED_EVENT_SIGNATURE =
+  'event Settled(address indexed from, address indexed to, uint256 amount, bytes32 indexed category, uint8 source, uint256 ref)'
+
+export const settledEvent = parseAbi([SETTLED_EVENT_SIGNATURE])[0]
+
+/** ABI of the single PayMesh contract: payments, links, batch, split, escrow and scheduled payments. */
+export const paymeshAbi = parseAbi([
+  SETTLED_EVENT_SIGNATURE,
+  'event PaymentMemo(address indexed from, address indexed to, string memo)',
+  'event LinkCreated(uint256 indexed id, address indexed creator, uint256 amount, bytes32 category, string title)',
+  'event LinkClosed(uint256 indexed id)',
+  'event BatchSent(uint256 indexed batchId, address indexed sender, uint256 total, uint256 count, bytes32 category)',
+  'event SplitCreated(uint256 indexed id, address indexed creator, string name)',
+  'event SplitPaid(uint256 indexed id, address indexed payer, uint256 amount)',
+  'event EscrowCreated(uint256 indexed id, address indexed payer, address indexed payee, uint256 amount, uint64 deadline)',
+  'event EscrowRefunded(uint256 indexed id)',
+  'event PlanCreated(uint256 indexed id, address indexed payer, address indexed payee, uint256 amount, uint64 interval, uint32 maxPayments)',
+  'event PlanExecuted(uint256 indexed id, uint32 paymentsMade)',
+  'event PlanCancelled(uint256 indexed id)',
+  'function pay(address to, uint256 amount, bytes32 category, string memo)',
+  'function createLink(uint256 amount, bytes32 category, string title) returns (uint256 id)',
+  'function payLink(uint256 id, uint256 amount)',
+  'function closeLink(uint256 id)',
+  'function getLink(uint256 id) view returns ((address creator, uint256 amount, bytes32 category, bool active, uint64 createdAt, uint256 totalPaid, uint32 payments, string title))',
+  'function linksOf(address account) view returns (uint256[])',
+  'function linkCount() view returns (uint256)',
+  'function activeLinks() view returns (uint256)',
+  'function batchPay(address[] recipients, uint256[] amounts, bytes32 category) returns (uint256 batchId)',
+  'function batchCount() view returns (uint256)',
+  'function createSplit(address[] recipients, uint16[] shareBps, string name) returns (uint256 id)',
+  'function paySplit(uint256 id, uint256 amount)',
+  'function getSplit(uint256 id) view returns ((address creator, uint64 createdAt, uint256 totalPaid, string name, address[] recipients, uint16[] shareBps))',
+  'function splitsOf(address account) view returns (uint256[])',
+  'function splitCount() view returns (uint256)',
+  'function createEscrow(address payee, uint256 amount, uint64 deadline, bytes32 category, string description) returns (uint256 id)',
+  'function release(uint256 id)',
+  'function refund(uint256 id)',
+  'function getEscrow(uint256 id) view returns ((address payer, address payee, uint256 amount, uint64 createdAt, uint64 deadline, uint8 status, bytes32 category, string description))',
+  'function escrowsOf(address account) view returns (uint256[])',
+  'function escrowCount() view returns (uint256)',
+  'function activeEscrows() view returns (uint256)',
+  'function createPlan(address payee, uint256 amount, uint64 interval, uint64 startAt, uint32 maxPayments, bytes32 category) returns (uint256 id)',
+  'function execute(uint256 id)',
+  'function cancel(uint256 id)',
+  'function getPlan(uint256 id) view returns ((address payer, address payee, uint256 amount, uint64 interval, uint64 nextPaymentAt, uint32 paymentsMade, uint32 maxPayments, bytes32 category, bool active))',
+  'function plansOf(address account) view returns (uint256[])',
+  'function planCount() view returns (uint256)',
+  'function activePlans() view returns (uint256)',
+  'function isDue(uint256 id) view returns (bool)',
+])
