@@ -27,11 +27,12 @@ interface Store {
   times: Record<string, number>
 }
 
-const LOOKBACK_BLOCKS = 300_000
+const LOOKBACK_BLOCKS = 200_000
 const MAX_RECORDS = 3000
 const MAX_TIME_FETCH_PER_RUN = 120
 const POLL_MS = 3000
-const storeKey = () => `paymesh:index:v1:${CHAIN_ID}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
+// The start block is part of the key, so moving it forward discards every older cached payment.
+const storeKey = () => `paymesh:index:v1:${CHAIN_ID}:${START_BLOCK ?? 0}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
 
 function loadStore(): Store {
   try {
@@ -83,8 +84,10 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const [blockTimeSec, setBlockTimeSec] = useState<number>()
   const [updatedAt, setUpdatedAt] = useState<number>()
 
+  const backoffUntil = useRef(0)
+
   const run = useCallback(async () => {
-    if (!client || !ANY_DEPLOYED || running.current) return
+    if (!client || !ANY_DEPLOYED || running.current || Date.now() < backoffUntil.current) return
     running.current = true
     try {
       const store = storeRef.current
@@ -93,27 +96,32 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       const floor = Math.max(START_BLOCK ?? 0, chainHead - LOOKBACK_BLOCKS, 0)
       const from = Math.max(store.lastBlock + 1, floor)
       setWindowStart((w) => (w === floor ? w : floor))
-      let changed = false
+      const flags = { changed: false }
 
       if (from <= chainHead) {
         if (chainHead - from > 2000) setStatus('indexing')
-        const found = await scanRange(client, from, chainHead, (current) => setProgress({ from, current, head: chainHead }))
-        if (found.length > 0) {
-          const known = new Set(store.records.map((r) => r.id))
-          for (const rec of found) if (!known.has(rec.id)) store.records.push(rec)
-          store.records = store.records.filter((r) => r.blockNumber >= floor).sort(byNewestStored).slice(0, MAX_RECORDS)
-          changed = true
-        }
+        await scanRange(client, from, chainHead, (found, nextCursor) => {
+          if (found.length > 0) {
+            const known = new Set(store.records.map((r) => r.id))
+            for (const rec of found) if (!known.has(rec.id)) store.records.push(rec)
+            store.records = store.records.filter((r) => r.blockNumber >= floor).sort(byNewestStored).slice(0, MAX_RECORDS)
+            flags.changed = true
+          }
+          // Remember how far we got, so a failure or reload resumes here instead of starting over.
+          store.lastBlock = nextCursor - 1
+          saveStore(store)
+          if (chainHead - from > 2000) setProgress({ from, current: nextCursor, head: chainHead })
+        })
         store.lastBlock = chainHead
       }
 
-      if (await fillTimestamps(client, store)) changed = true
+      if (await fillTimestamps(client, store)) flags.changed = true
       if (Date.now() - lastBlockTimeAt.current > 60_000) {
         lastBlockTimeAt.current = Date.now()
         setBlockTimeSec(await measureBlockTime(client, chainHead))
       }
       // Only touch storage and React state when something actually changed.
-      if (changed) {
+      if (flags.changed) {
         saveStore(store)
         setSettlements(buildList(store))
       } else if (from <= chainHead) {
@@ -124,7 +132,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       setStatus('ready')
       setUpdatedAt(Date.now())
     } catch (e) {
-      setError(e instanceof Error ? e.message.split('\n')[0] : 'Could not read the network')
+      saveStore(storeRef.current)
+      backoffUntil.current = Date.now() + (isRateLimited(e) ? 20_000 : 6_000)
+      setError(isRateLimited(e) ? 'The public RPC is rate limiting requests. Retrying shortly.' : e instanceof Error ? e.message.split('\n')[0] : 'Could not read the network')
       setStatus('error')
     } finally {
       running.current = false
@@ -160,11 +170,22 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>
 }
 
-/** Scans in adaptive chunks so a provider's block-range limit shrinks the step instead of failing. */
-async function scanRange(client: Client, from: number, to: number, onProgress: (current: number) => void): Promise<StoredRecord[]> {
-  const out: StoredRecord[] = []
-  let step = 5000
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+function isRateLimited(e: unknown): boolean {
+  const status = (e as { status?: number } | null)?.status
+  const text = e instanceof Error ? `${e.message} ${(e as { details?: string }).details ?? ''}` : String(e)
+  return status === 429 || /429|too many requests|rate.?limit/i.test(text)
+}
+
+/**
+ * Scans in large chunks. A provider's block-range limit shrinks the step; a rate limit (HTTP 429) only waits
+ * and retries the same chunk, so throttling never snowballs into thousands of tiny requests.
+ */
+async function scanRange(client: Client, from: number, to: number, onChunk: (records: StoredRecord[], nextCursor: number) => void): Promise<void> {
+  let step = 10_000  // the public RPC rejects ranges much larger than this
   let cursor = from
+  let waits = 0
   while (cursor <= to) {
     const end = Math.min(cursor + step - 1, to)
     try {
@@ -174,11 +195,12 @@ async function scanRange(client: Client, from: number, to: number, onProgress: (
         fromBlock: BigInt(cursor),
         toBlock: BigInt(end),
       })
+      const chunk: StoredRecord[] = []
       for (const log of logs) {
         const args = log.args
         if (!args.from || !args.to || args.amount === undefined || !args.category || args.source === undefined || args.ref === undefined) continue
         if (log.blockNumber === null || log.logIndex === null || !log.transactionHash) continue
-        out.push({
+        chunk.push({
           id: `${log.transactionHash}-${log.logIndex}`,
           txHash: log.transactionHash,
           blockNumber: Number(log.blockNumber),
@@ -193,14 +215,20 @@ async function scanRange(client: Client, from: number, to: number, onProgress: (
         })
       }
       cursor = end + 1
-      if (to - from > 2000) onProgress(cursor)
-      step = Math.min(step * 2, 20_000)
+      waits = 0
+      onChunk(chunk, cursor)
+      if (cursor <= to) await sleep(260)  // stay under the public RPC rate limit
     } catch (e) {
-      if (step <= 200) throw e
-      step = Math.max(200, Math.floor(step / 2))
+      if (isRateLimited(e)) {
+        if (waits >= 5) throw e
+        waits += 1
+        await sleep(1000 * 2 ** (waits - 1))
+        continue
+      }
+      if (step <= 1000) throw e
+      step = Math.max(1000, Math.floor(step / 2))
     }
   }
-  return out
 }
 
 /** Fetches missing block timestamps (newest first). Returns true when any were added. */
@@ -215,8 +243,8 @@ async function fillTimestamps(client: Client, store: Store): Promise<boolean> {
     }
   }
   let added = false
-  for (let i = 0; i < missing.length; i += 12) {
-    const batch = missing.slice(i, i + 12)
+  for (let i = 0; i < missing.length; i += 6) {
+    const batch = missing.slice(i, i + 6)
     const blocks = await Promise.all(batch.map((n) => client.getBlock({ blockNumber: BigInt(n) }).catch(() => undefined)))
     blocks.forEach((b, idx) => {
       if (b) {

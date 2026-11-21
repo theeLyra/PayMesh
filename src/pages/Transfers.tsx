@@ -57,7 +57,7 @@ export default function Transfers() {
   }
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Transfers" subtitle="Send USDC to any wallet through the PayMesh contract. Every transfer is recorded onchain with a category." />
       <NotDeployed />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,460px)_1fr]">

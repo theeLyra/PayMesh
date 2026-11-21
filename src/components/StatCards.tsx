@@ -13,7 +13,7 @@ import { Skeleton, cx } from './ui'
 
 function StatShell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="glass flex min-h-[150px] flex-col rounded-2xl p-3.5 dash:h-[152px]">
+    <div className="glass flex min-h-[148px] flex-col rounded-xl p-4">
       <div className="label">{title}</div>
       {children}
     </div>
@@ -21,11 +21,11 @@ function StatShell({ title, children }: { title: string; children: ReactNode }) 
 }
 
 function Delta({ pct, suffix }: { pct: number | undefined; suffix: string }) {
-  if (pct === undefined) return <span className="text-[11px] text-pm-muted">No prior period to compare</span>
+  if (pct === undefined) return <span className="text-xs text-pm-muted">No prior period to compare</span>
   const up = pct >= 0
   const Icon = up ? ArrowUp : ArrowDown
   return (
-    <span className={cx('inline-flex items-center gap-1 text-[11px]', up ? 'text-pm-good' : 'text-pm-bad')}>
+    <span className={cx('inline-flex items-center gap-1 text-xs', up ? 'text-pm-good' : 'text-pm-bad')}>
       <Icon className="h-3 w-3" />
       {Math.abs(pct).toFixed(1)}% <span className="text-pm-muted">{suffix}</span>
     </span>
@@ -39,9 +39,9 @@ function Unavailable({ text }: { text: string }) {
 function OpRow({ label, value, loading, to }: { label: string; value: bigint | undefined; loading: boolean; to: string }) {
   return (
     <li>
-      <Link to={to} className="flex items-center justify-between rounded-md px-1.5 py-1 text-xs transition hover:bg-white/[0.05]">
+      <Link to={to} className="flex items-center justify-between rounded-md px-1.5 py-1 text-xs hover:bg-pm-text/5">
         <span className="text-pm-muted">{label}</span>
-        {loading ? <Skeleton className="h-4 w-6" /> : <span className="tabular font-display text-base font-semibold text-white">{value === undefined ? '—' : value.toString()}</span>}
+        {loading ? <Skeleton className="h-4 w-6" /> : <span className="tabular text-base font-semibold text-pm-text">{value === undefined ? '—' : value.toString()}</span>}
       </Link>
     </li>
   )
@@ -78,7 +78,7 @@ export function StatCards() {
   const loadingData = deployed && !ready && settlements.length === 0
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 dash:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <StatShell title="Total volume (24H)">
         {!deployed ? (
           <Unavailable text="Contracts not deployed" />
@@ -86,7 +86,7 @@ export function StatCards() {
           <Skeleton className="mt-3 h-20 w-full" />
         ) : (
           <>
-            <div className="tabular mt-1 font-display text-[28px] font-bold leading-tight text-violet-300">${fmtCompactUsdc(volume.cur.volume)}</div>
+            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">${fmtCompactUsdc(volume.cur.volume)}</div>
             <Delta pct={pctChange(volume.cur.volume, volume.prev.volume)} suffix="vs previous 24h" />
             <MiniBars values={volume.buckets.volume} height={34} className="mt-auto" />
             {timesPartial && <div className="text-[10px] text-pm-warn">Partial: block times still loading</div>}
@@ -101,8 +101,8 @@ export function StatCards() {
           <Skeleton className="mt-3 h-20 w-full" />
         ) : (
           <>
-            <div className="tabular mt-1 font-display text-[28px] font-bold leading-tight text-[#58cfe8]">{volume.cur.count.toLocaleString('en-US')}</div>
-            <span className="text-[11px] text-pm-muted">
+            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">{volume.cur.count.toLocaleString('en-US')}</div>
+            <span className="text-xs text-pm-muted">
               confirmed in 24h
               {successRate !== undefined && (
                 <>
@@ -111,7 +111,7 @@ export function StatCards() {
                 </>
               )}
             </span>
-            <Sparkline values={volume.buckets.count} height={34} className="mt-auto" />
+            <Sparkline values={volume.buckets.count} height={34} className="mt-auto text-pm-violet" />
           </>
         )}
       </StatShell>
@@ -121,16 +121,16 @@ export function StatCards() {
           <Unavailable text="No measurements yet. Send a payment and its confirmation time is measured here." />
         ) : (
           <>
-            <div className="tabular mt-1 font-display text-[28px] font-bold leading-tight text-violet-300">{avgSettle.toFixed(1)} sec</div>
+            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">{avgSettle.toFixed(1)} sec</div>
             {settleDelta !== undefined ? (
-              <span className={cx('inline-flex items-center gap-1 text-[11px]', settleDelta <= 0 ? 'text-pm-good' : 'text-pm-warn')}>
+              <span className={cx('inline-flex items-center gap-1 text-xs', settleDelta <= 0 ? 'text-pm-good' : 'text-pm-warn')}>
                 {settleDelta <= 0 ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
                 {Math.abs(settleDelta).toFixed(1)} sec <span className="text-pm-muted">vs earlier</span>
               </span>
             ) : (
-              <span className="text-[11px] text-pm-muted">{timings.length} measured here</span>
+              <span className="text-xs text-pm-muted">{timings.length} measured here</span>
             )}
-            <Sparkline values={timings} color="#a78bfa" height={34} className="mt-auto" />
+            <Sparkline values={timings} height={34} className="mt-auto text-pm-violet" />
           </>
         )}
         {avgSettle === undefined && blockTimeSec !== undefined && <div className="text-[10px] text-pm-muted">Block time {blockTimeSec.toFixed(2)} sec</div>}

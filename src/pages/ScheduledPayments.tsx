@@ -27,7 +27,7 @@ export default function ScheduledPayments() {
   const { balance } = useUsdcBalance()
   const { transact, approveIfNeeded, pending } = useTransact()
   const allowance = useUsdcAllowance(PAYMESH)
-  const now = useNow(1000)
+  const now = useNow(2000)
   const [payee, setPayee] = useState('')
   const [amount, setAmount] = useState('')
   const [interval, setIntervalSec] = useState(86_400)
@@ -70,7 +70,7 @@ export default function ScheduledPayments() {
   const needsTopUp = allowance !== undefined && outstanding > allowance
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader
         title="Scheduled Payments"
         subtitle="Recurring USDC payments that stay in your wallet until each one is due. Anyone can trigger a due payment, but only to the payee you set."
@@ -105,8 +105,8 @@ export default function ScheduledPayments() {
                 <input className="input" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
               </Field>
               <CategorySelect value={category} onChange={setCategory} />
-              <div className="rounded-xl border border-pm-line bg-white/[0.03] p-3 text-xs text-pm-muted">
-                Total commitment: <span className="tabular font-semibold text-white">{fmtUsdc(total)} USDC</span> over {n || 0} payments. You approve this much USDC once and it is
+              <div className="rounded-xl border border-pm-line bg-pm-text/[0.03] p-3 text-xs text-pm-muted">
+                Total commitment: <span className="tabular font-semibold text-pm-text">{fmtUsdc(total)} USDC</span> over {n || 0} payments. You approve this much USDC once and it is
                 pulled from your wallet only as each payment comes due.
               </div>
               <Button className="w-full" onClick={() => void create()} disabled={!canCreate} busy={pending !== null}>
@@ -118,7 +118,7 @@ export default function ScheduledPayments() {
 
         <div className="space-y-4">
           {needsTopUp && PAYMESH && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pm-warn/30 bg-pm-warn/[0.07] p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-pm-warn/30 bg-pm-warn/[0.07] p-4 text-sm">
               <span className="text-pm-text/90">
                 Your USDC allowance ({fmtUsdc(allowance ?? 0n)}) is lower than your remaining scheduled payments ({fmtUsdc(outstanding)}). Payments will fail until you top it up.
               </span>
@@ -148,7 +148,7 @@ export default function ScheduledPayments() {
                     <li key={id.toString()} className="space-y-2 px-4 py-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="tabular font-display text-lg font-semibold text-white">{fmtUsdc(data.amount)} USDC</span>
+                          <span className="tabular text-lg font-semibold text-pm-text">{fmtUsdc(data.amount)} USDC</span>
                           <Badge tone={data.active ? 'good' : completed ? 'violet' : 'muted'}>{data.active ? 'Active' : completed ? 'Completed' : 'Cancelled'}</Badge>
                           <Badge>{isPayer ? 'You pay' : 'You receive'}</Badge>
                         </div>

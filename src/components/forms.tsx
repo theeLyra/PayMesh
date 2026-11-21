@@ -37,7 +37,7 @@ export function AmountInput({ value, onChange, label = 'Amount', max = true }: {
     >
       <div className="relative">
         <input
-          className="input tabular pr-28 font-display text-lg"
+          className="input tabular pr-28 text-lg"
           inputMode="decimal"
           placeholder="0.00"
           value={value}
@@ -45,7 +45,7 @@ export function AmountInput({ value, onChange, label = 'Amount', max = true }: {
         />
         <div className="absolute inset-y-0 right-3 flex items-center gap-2">
           {max && balance !== undefined && balance > 0n && (
-            <button type="button" onClick={() => onChange(formatUsdc(balance))} className="rounded-md bg-pm-violet/20 px-2 py-1 text-[11px] font-bold text-violet-200 hover:bg-pm-violet/30">
+            <button type="button" onClick={() => onChange(formatUsdc(balance))} className="rounded-md bg-pm-violet/20 px-2 py-1 text-[11px] font-bold text-pm-violet hover:bg-pm-violet/30">
               MAX
             </button>
           )}

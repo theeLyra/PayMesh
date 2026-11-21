@@ -66,7 +66,7 @@ export default function Recipients() {
   }, [settlements, me])
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Recipients" subtitle="Save the wallets you pay often. Names stay in this browser and are never sent anywhere." />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,400px)_1fr]">
         <Card className="h-fit p-5">
@@ -92,11 +92,11 @@ export default function Recipients() {
                 const stats = sentTo.get(r.address.toLowerCase())
                 return (
                   <li key={r.address} className="flex flex-wrap items-center gap-3 px-4 py-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pm-violet/60 to-pm-cyan/40 font-display font-bold text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pm-violet/12 font-semibold text-pm-violet">
                       {r.name.slice(0, 1).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold text-white">{r.name}</div>
+                      <div className="truncate font-semibold text-pm-text">{r.name}</div>
                       <div className="text-xs text-pm-muted">
                         <ExplorerLink href={addressUrl(r.address)}>
                           <span className="font-mono">{shortAddress(r.address)}</span>

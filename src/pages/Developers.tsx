@@ -1,8 +1,10 @@
+import { IS_MAINNET } from '@/paymesh/network'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { paymeshAbi, settledEvent, SETTLED_EVENT_SIGNATURE } from '@/paymesh/abis'
 import { CHAIN_FACTS, CHAIN_ID, RPC_URL, USDC_ADDRESS, addressUrl } from '@/paymesh/chain'
 import { PAYMESH } from '@/paymesh/contracts'
+import { Link } from '@/paymesh/router'
 import { Badge, Button, Card, ExplorerLink, NotDeployed, PageHeader } from '@/components/ui'
 
 async function copy(text: string, label: string) {
@@ -17,8 +19,8 @@ async function copy(text: string, label: string) {
 function Code({ children }: { children: string }) {
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-xl border border-pm-line bg-black/40 p-4 pr-12 font-mono text-[12px] leading-6 text-pm-text">{children}</pre>
-      <button onClick={() => void copy(children, 'Snippet')} aria-label="Copy snippet" className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-lg text-pm-muted hover:bg-white/10 hover:text-white">
+      <pre className="overflow-x-auto rounded-xl border border-pm-line bg-pm-text/[0.05] p-4 pr-12 font-mono text-[12px] leading-6 text-pm-text">{children}</pre>
+      <button onClick={() => void copy(children, 'Snippet')} aria-label="Copy snippet" className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-lg text-pm-muted hover:bg-pm-text/10 hover:text-pm-text">
         <Copy className="h-4 w-4" />
       </button>
     </div>
@@ -52,10 +54,15 @@ await wallet.writeContract({
 })`
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader
         title="Developer API"
-        subtitle="PayMesh is a set of onchain contracts. Integrate straight from your own app with any EVM library. There is no hosted REST service in between."
+        subtitle="PayMesh is one onchain contract. Integrate straight from your own app with any EVM library. There is no hosted REST service in between."
+        action={
+          <Link to="/docs/developer-guide" className="text-sm font-semibold text-pm-violet hover:underline">
+            Read the developer guide
+          </Link>
+        }
       />
       <NotDeployed />
       <div className="space-y-5">
@@ -65,7 +72,7 @@ await wallet.writeContract({
           </div>
           <ul className="divide-y divide-pm-line/60">
             <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
-              <div className="w-40 font-display font-semibold text-white">PayMesh</div>
+              <div className="w-40 font-semibold text-pm-text">PayMesh</div>
               {PAYMESH ? (
                 <>
                   <ExplorerLink href={addressUrl(PAYMESH)}>
@@ -79,12 +86,12 @@ await wallet.writeContract({
               ) : (
                 <>
                   <Badge tone="warn">Not deployed</Badge>
-                  <span className="font-mono text-[11px] text-pm-muted">VITE_PAYMESH_ADDRESS</span>
+                  <span className="font-mono text-[11px] text-pm-muted">{IS_MAINNET ? 'VITE_PAYMESH_ADDRESS_MAINNET' : 'VITE_PAYMESH_ADDRESS'}</span>
                 </>
               )}
             </li>
             <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
-              <div className="w-40 font-display font-semibold text-white">USDC (Circle)</div>
+              <div className="w-40 font-semibold text-pm-text">USDC (Circle)</div>
               <ExplorerLink href={addressUrl(USDC_ADDRESS)}>
                 <span className="break-all font-mono text-xs">{USDC_ADDRESS}</span>
               </ExplorerLink>

@@ -40,7 +40,7 @@ function PayLinkCard({ id }: { id: bigint }) {
     <div className="space-y-4">
       <div>
         <div className="flex items-center gap-2">
-          <h3 className="font-display text-xl font-semibold text-white">{link.title || `Payment link #${id.toString()}`}</h3>
+          <h3 className="text-xl font-semibold text-pm-text">{link.title || `Payment link #${id.toString()}`}</h3>
           <Badge tone={link.active ? 'good' : 'muted'}>{link.active ? 'Active' : 'Closed'}</Badge>
         </div>
         <p className="mt-1 text-xs text-pm-muted">
@@ -48,7 +48,7 @@ function PayLinkCard({ id }: { id: bigint }) {
         </p>
       </div>
       {fixed ? (
-        <div className="tabular font-display text-3xl font-bold gradient-text">{fmtUsdc(link.amount)} USDC</div>
+        <div className="tabular text-3xl font-bold text-pm-violet">{fmtUsdc(link.amount)} USDC</div>
       ) : (
         <AmountInput value={amount} onChange={setAmount} label="Amount to pay" />
       )}
@@ -110,7 +110,7 @@ export default function PaymentLinks() {
   const parsedId = /^\d+$/.test(openId) ? BigInt(openId) : undefined
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Payment Links" subtitle="Create a reusable link anyone can pay in USDC. Funds go straight to your wallet." />
       <NotDeployed />
       <div className="grid gap-5 lg:grid-cols-2">
@@ -164,7 +164,7 @@ export default function PaymentLinks() {
                 <li key={id.toString()} className="flex flex-wrap items-center gap-3 px-4 py-3.5">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-semibold text-white">{data?.title || `Link #${id.toString()}`}</span>
+                      <span className="truncate font-semibold text-pm-text">{data?.title || `Link #${id.toString()}`}</span>
                       {data && <Badge tone={data.active ? 'good' : 'muted'}>{data.active ? 'Active' : 'Closed'}</Badge>}
                     </div>
                     <div className="tabular text-xs text-pm-muted">

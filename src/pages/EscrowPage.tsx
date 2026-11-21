@@ -24,7 +24,7 @@ export default function EscrowPage() {
   const { address } = useAccount()
   const { balance } = useUsdcBalance()
   const { transact, approveIfNeeded, pending } = useTransact()
-  const now = useNow(1000)
+  const now = useNow(2000)
   const [payee, setPayee] = useState('')
   const [amount, setAmount] = useState('')
   const [duration, setDuration] = useState(604_800)
@@ -59,7 +59,7 @@ export default function EscrowPage() {
     transact(label, { address: PAYMESH!, abi: paymeshAbi, functionName: fn, args: [id] })
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader
         title="Escrow"
         subtitle="Lock USDC for a payee. You release it when the work is done. If it is never released, the payee can return it, or you can reclaim it after the deadline."
@@ -117,7 +117,7 @@ export default function EscrowPage() {
                   <li key={id.toString()} className="space-y-2 px-4 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="tabular font-display text-lg font-semibold text-white">{fmtUsdc(data.amount)} USDC</span>
+                        <span className="tabular text-lg font-semibold text-pm-text">{fmtUsdc(data.amount)} USDC</span>
                         <Badge tone={active ? 'warn' : data.status === 1 ? 'good' : 'muted'}>{ESCROW_STATUS[data.status] ?? 'Unknown'}</Badge>
                         <Badge>{isPayer ? 'You are payer' : 'You are payee'}</Badge>
                       </div>

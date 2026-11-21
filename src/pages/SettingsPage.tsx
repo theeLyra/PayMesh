@@ -4,17 +4,25 @@ import { useActivity } from '@/paymesh/activityContext'
 import { CHAIN_FACTS, CHAIN_ID, RPC_URL, addressUrl } from '@/paymesh/chain'
 import { PAYMESH } from '@/paymesh/contracts'
 import { Badge, Button, Card, ExplorerLink, PageHeader } from '@/components/ui'
+import { useTheme, type ThemeChoice } from '@/paymesh/themeContext'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-pm-line/50 py-3 text-sm last:border-0">
       <span className="text-pm-muted">{label}</span>
-      <span className="text-right text-white">{children}</span>
+      <span className="text-right text-pm-text">{children}</span>
     </div>
   )
 }
 
+const THEMES: Array<{ value: ThemeChoice; label: string }> = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
+
 export default function SettingsPage() {
+  const { choice, setChoice } = useTheme()
   const { address, chainId, connector, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const { status, head, windowStart, blockTimeSec, settlements } = useActivity()
@@ -28,9 +36,21 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Settings" subtitle="Wallet, network and local data for this browser." />
       <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="p-5 lg:col-span-2">
+          <div className="label mb-2">Appearance</div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Theme">
+            {THEMES.map((t) => (
+              <Button key={t.value} variant={choice === t.value ? 'primary' : 'ghost'} role="radio" aria-checked={choice === t.value} onClick={() => setChoice(t.value)}>
+                {t.label}
+              </Button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-pm-muted">System follows your device setting. The choice is saved on this device.</p>
+        </Card>
+
         <Card className="p-5">
           <div className="label mb-2">Wallet</div>
           <Row label="Status">{isConnected ? <Badge tone="good">Connected</Badge> : <Badge>Not connected</Badge>}</Row>
@@ -85,9 +105,9 @@ export default function SettingsPage() {
               Delete recipients
             </Button>
           </div>
-          <div className="mt-5 rounded-xl border border-pm-line bg-white/[0.03] p-3 text-xs text-pm-muted text-pretty">
+          <div className="mt-5 rounded-xl border border-pm-line bg-pm-text/[0.03] p-3 text-xs text-pm-muted text-pretty">
             Security: PayMesh contracts have no owner and no admin keys. USDC approvals are exact amounts. These contracts have had an automated review but not a third-party audit, so use
-            test funds on testnet.
+            test funds until you have an independent audit.
           </div>
         </Card>
       </div>

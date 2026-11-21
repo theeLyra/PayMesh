@@ -41,7 +41,7 @@ function SplitCard({ id, data }: { id: bigint; data: SplitData }) {
   return (
     <li className="space-y-3 px-4 py-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="font-display text-lg font-semibold text-white">{data.name || `Split #${id.toString()}`}</div>
+        <div className="text-lg font-semibold text-pm-text">{data.name || `Split #${id.toString()}`}</div>
         <span className="text-xs text-pm-muted">
           #{id.toString()} · {fmtDateTime(Number(data.createdAt))}
         </span>
@@ -50,7 +50,7 @@ function SplitCard({ id, data }: { id: bigint; data: SplitData }) {
         {data.recipients.map((r, i) => (
           <li key={`${r}-${i}`} className="flex items-center justify-between text-xs">
             <span className="font-mono text-pm-text">{shortAddress(r)}</span>
-            <span className="tabular font-semibold text-violet-200">{(data.shareBps[i] / 100).toFixed(2)}%</span>
+            <span className="tabular font-semibold text-pm-violet">{(data.shareBps[i] / 100).toFixed(2)}%</span>
           </li>
         ))}
       </ul>
@@ -124,7 +124,7 @@ export default function SplitPayments() {
   const lookupId = /^\d+$/.test(lookup) ? BigInt(lookup) : undefined
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Split Payments" subtitle="Define who gets what share once, then anyone can pay the split and each recipient is paid instantly in the same transaction." />
       <NotDeployed />
       <div className="grid gap-5 lg:grid-cols-2">
@@ -138,7 +138,7 @@ export default function SplitPayments() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="label">Recipients</span>
-                    <button onClick={even} className="text-xs font-semibold text-violet-300 hover:text-white">
+                    <button onClick={even} className="text-xs font-semibold text-pm-violet hover:text-pm-text">
                       Split evenly
                     </button>
                   </div>

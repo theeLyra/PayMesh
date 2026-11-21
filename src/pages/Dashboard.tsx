@@ -1,141 +1,122 @@
 import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
-import { Globe } from 'lucide-react'
-import { useActivity, type Settlement } from '@/paymesh/activityContext'
-import { NetworkMap } from '@/components/NetworkMap'
+import { useActivity } from '@/paymesh/activityContext'
+import { BackButton } from '@/components/BackButton'
+import { WalletHero } from '@/components/WalletHero'
 import { StatCards } from '@/components/StatCards'
 import { TransactionFeed } from '@/components/TransactionFeed'
-import { useNow } from '@/paymesh/useNow'
-import { NetworkPill, ProfileCard } from '@/components/TopBar'
-import { Sparkline } from '@/components/charts'
+import { BarChart } from '@/components/charts'
 import { NotDeployed, cx } from '@/components/ui'
-import { FRESH_SECONDS, bucketize, uniqueWallets } from '@/paymesh/metrics'
+import { fmtCompactUsdc } from '@/paymesh/format'
+import { DAY, bucketize, totalsBetween } from '@/paymesh/metrics'
+import { NAV, Link } from '@/paymesh/router'
+import { useNow } from '@/paymesh/useNow'
 
 function SystemStatus() {
   const { status, deployed, head } = useActivity()
   const state = !deployed ? 'warn' : status === 'error' ? 'bad' : status === 'ready' ? 'good' : 'warn'
-  const text = !deployed ? 'Contracts not deployed' : status === 'error' ? 'Network unreachable' : status === 'ready' ? 'All systems operational' : 'Indexing payments'
+  const text = !deployed ? 'Contract not deployed' : status === 'error' ? 'Network unreachable' : status === 'ready' ? 'All systems operational' : 'Indexing payments'
   return (
-    <div
+    <span
       title={head ? `Latest block ${head.toLocaleString('en-US')}` : undefined}
-      className={cx(
-        'inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider',
-        state === 'good' && 'text-pm-good',
-        state === 'warn' && 'text-pm-warn',
-        state === 'bad' && 'text-pm-bad',
-      )}
+      className="inline-flex items-center gap-2 rounded-full border border-pm-line bg-pm-panel px-3 py-1.5 text-xs font-medium text-pm-text"
     >
-      <span className={cx('h-2 w-2 rounded-full', state === 'good' ? 'bg-pm-good shadow-[0_0_8px_#34d399]' : state === 'warn' ? 'bg-pm-warn' : 'bg-pm-bad')} />
+      <span className={cx('h-2 w-2 rounded-full', state === 'good' ? 'bg-pm-good' : state === 'warn' ? 'bg-pm-warn' : 'bg-pm-bad')} />
       {text}
-    </div>
+    </span>
   )
 }
 
-/** Owns the 1 second clock so the rest of the dashboard does not re-render every tick. */
-function LiveTransfers({ settlements, deployed }: { settlements: Settlement[]; deployed: boolean }) {
-  const nowSec = Math.floor(useNow(1000) / 1000)
-  const live = useMemo(() => bucketize(settlements, nowSec - 3600, nowSec + 30, 12), [settlements, nowSec])
-  const lastHour = live.count.reduce((a, b) => a + b, 0)
-  const newest = settlements[0]?.timestamp
-  const hot = newest !== undefined && nowSec - newest < FRESH_SECONDS
-  return (
-    <div key={hot ? newest : 'idle'} className={cx('glass rounded-2xl p-4', hot && 'pm-glow')}>
-      <div className="label">Live transfers</div>
-      <div className="mt-1 flex items-center justify-between gap-4">
-        <div className="tabular font-display text-[32px] font-bold leading-none text-[#7dd3fc]">{deployed ? lastHour.toLocaleString('en-US') : '—'}</div>
-        <div className="w-28">
-          <Sparkline values={live.count} height={36} color="#a78bfa" />
-        </div>
-      </div>
-      <div className="mt-1.5 text-xs text-pm-muted">Settled in the last 60 minutes</div>
-    </div>
-  )
-}
-
-function GlobeRing() {
-  return (
-    <div className="relative h-16 w-16 shrink-0" aria-hidden="true">
-      <svg viewBox="0 0 64 64" className="absolute inset-0">
-        <defs>
-          <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#a78bfa" />
-            <stop offset="1" stopColor="#22d3ee" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="32" r="29" fill="rgba(8,10,26,0.7)" stroke="rgba(139,112,255,0.25)" strokeWidth="3" />
-        <circle cx="32" cy="32" r="29" fill="none" stroke="url(#ring)" strokeWidth="3" strokeLinecap="round" strokeDasharray="120 182" transform="rotate(-70 32 32)" />
-      </svg>
-      <Globe className="absolute inset-0 m-auto h-6 w-6 text-violet-200" />
-    </div>
-  )
-}
+const ACTIONS: Array<{ to: string; title: string; desc: string }> = [
+  { to: '/transfers', title: 'Send USDC', desc: 'Pay any wallet with a category' },
+  { to: '/links', title: 'Payment link', desc: 'Get paid with a shareable link' },
+  { to: '/batch', title: 'Batch payment', desc: 'Pay many wallets at once' },
+  { to: '/split', title: 'Split payment', desc: 'Divide one payment by shares' },
+  { to: '/escrow', title: 'Escrow', desc: 'Hold funds until released' },
+  { to: '/scheduled', title: 'Scheduled', desc: 'Recurring payments on a plan' },
+]
 
 export default function Dashboard() {
   const { address } = useAccount()
   const { settlements, status, deployed, error, progress, windowStart } = useActivity()
+  const nowSec = Math.floor(useNow(15_000) / 1000)
   const loading = deployed && status !== 'ready' && status !== 'error' && settlements.length === 0
 
-  const wallets = useMemo(() => uniqueWallets(settlements), [settlements])
+  const day = useMemo(() => {
+    const cur = totalsBetween(settlements, nowSec - DAY, nowSec + 60)
+    const buckets = bucketize(settlements, nowSec - DAY, nowSec + 60, 24)
+    const labels = buckets.volume.map((_, i) => `${String(new Date((nowSec - DAY + i * 3600) * 1000).getHours()).padStart(2, '0')}:00`)
+    return { cur, buckets, labels }
+  }, [settlements, nowSec])
 
   return (
-    <div className="animate-rise relative dash:h-[max(730px,calc(100dvh-112px))]">
-      <NotDeployed />
-
-      {/* Headline */}
-      <div className="mb-4 dash:absolute dash:left-2 dash:top-0 dash:z-10 dash:mb-0">
-        <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-white text-balance sm:text-5xl dash:text-[32px] min-[1500px]:dash:text-[40px]">
-          The World. <span className="text-[#58cfe8]">Connected.</span> <span className="text-violet-400">Paid.</span>
-        </h1>
-        <p className="mt-2 text-base text-pm-muted dash:text-[15px] min-[1500px]:dash:text-[17px]">Programmable payments. Borderless possibilities.</p>
-      </div>
-
-      {/* System status and live transfers */}
-      <div className="mb-4 dash:absolute dash:right-[326px] dash:top-0 dash:z-10 dash:mb-0 dash:w-[260px]">
-        <div className="mb-2 flex flex-wrap items-center gap-3">
+    <div>
+      <BackButton fallback="/" className="mb-4" />
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-pm-text sm:text-3xl">Overview</h1>
+          <p className="mt-1 text-sm text-pm-muted">One network. Limitless USDC possibilities.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <SystemStatus />
-          <NetworkPill />
         </div>
-        <LiveTransfers settlements={settlements} deployed={deployed} />
       </div>
 
-      {/* Map */}
-      <div className="relative mb-4 dash:absolute dash:inset-y-0 dash:left-0 dash:right-[316px] dash:mb-0">
-        <div className="dash:absolute dash:inset-x-0 dash:top-[96px]">
-          <NetworkMap settlements={settlements} me={address} loading={loading} />
+      <WalletHero />
+
+      <NotDeployed />
+      {progress && (
+        <div className="mb-4 rounded-xl border border-pm-line bg-pm-panel px-4 py-3 text-sm text-pm-muted">
+          Reading payment history: block {progress.current.toLocaleString('en-US')} of {progress.head.toLocaleString('en-US')} ({(progress.head - progress.current).toLocaleString('en-US')} remaining)
         </div>
-        <div className="pointer-events-none absolute bottom-2 left-3 dash:bottom-[190px] dash:left-4">
-          <div className="flex items-end gap-4">
-            <div>
-              <div className="tabular font-display text-6xl font-bold leading-none gradient-text dash:text-[88px]">{deployed ? wallets.toLocaleString('en-US') : '—'}</div>
-              <div className="mt-2 font-display text-lg font-semibold uppercase tracking-[0.1em] text-white">Wallets</div>
-              <div className="mt-0.5 max-w-[190px] text-xs text-pm-muted">Connected through verified PayMesh payments</div>
+      )}
+      {error && <div className="mb-4 rounded-xl border border-pm-bad/40 bg-pm-bad/10 px-4 py-3 text-sm text-pm-bad">Reconnecting to the network</div>}
+
+      <StatCards />
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="space-y-4">
+          <section className="glass rounded-xl p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold text-pm-text">Volume, last 24 hours</h2>
+              <span className="tabular text-sm text-pm-muted">
+                <span className="font-semibold text-pm-text">${fmtCompactUsdc(day.cur.volume)}</span> across {day.cur.count.toLocaleString('en-US')} payments
+              </span>
             </div>
-            <GlobeRing />
-          </div>
-        </div>
-        {progress && (
-          <div className="absolute right-3 top-2 rounded-xl border border-pm-line bg-pm-deep/90 px-3 py-2 text-xs text-pm-muted dash:right-4 dash:top-[104px]">
-            Indexing block {progress.current.toLocaleString('en-US')} of {progress.head.toLocaleString('en-US')} ({(progress.head - progress.current).toLocaleString('en-US')} remaining)
-          </div>
-        )}
-        {error && <div className="absolute right-3 top-2 rounded-lg border border-pm-bad/40 bg-pm-bad/10 px-2 py-1 text-xs text-pm-bad dash:right-4 dash:top-[104px]">Reconnecting to the network</div>}
-        <div className="pointer-events-none absolute bottom-2 right-3 hidden text-[10px] text-pm-muted/70 sm:block dash:bottom-[160px] dash:right-4">
-          Wallet positions are illustrative, not geographic{windowStart !== undefined && !progress ? ` · history from block ${windowStart.toLocaleString('en-US')}` : ''}
-        </div>
-      </div>
+            <div className="mt-4">
+              {deployed ? <BarChart values={day.buckets.volume} labels={day.labels} height={170} /> : <div className="h-[170px]" />}
+              <div className="mt-2 flex justify-between text-[11px] text-pm-muted">
+                <span>{day.labels[0]}</span>
+                <span>{day.labels[12]}</span>
+                <span>Now</span>
+              </div>
+            </div>
+            {windowStart !== undefined && !progress && (
+              <p className="mt-3 text-xs text-pm-muted">Verified onchain payments from block {windowStart.toLocaleString('en-US')}.</p>
+            )}
+          </section>
 
-      {/* Analytics cards */}
-      <div className="mb-4 dash:absolute dash:bottom-0 dash:left-0 dash:right-[316px] dash:mb-0">
-        <StatCards />
-      </div>
-
-      {/* Identity and live feed */}
-      <div className="dash:absolute dash:bottom-0 dash:right-0 dash:top-0 dash:flex dash:w-[304px] dash:flex-col dash:gap-3">
-        <div className="hidden dash:block">
-          <ProfileCard />
+          <section>
+            <h2 className="mb-2 text-sm font-semibold text-pm-text">Quick actions</h2>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {ACTIONS.map((a) => {
+                const Icon = NAV.find((n) => n.path === a.to)?.icon
+                return (
+                  <Link key={a.to} to={a.to} className="glass flex items-center gap-3 rounded-xl p-3.5 hover:bg-pm-text/[0.03]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pm-violet/10 text-pm-violet">{Icon && <Icon className="h-5 w-5" />}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-pm-text">{a.title}</span>
+                      <span className="block truncate text-xs text-pm-muted">{a.desc}</span>
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
         </div>
-        <div className="dash:min-h-0 dash:flex-1">
-          <TransactionFeed settlements={settlements} me={address} loading={loading} deployed={deployed} error={error} limit={5} />
+
+        <div className="space-y-4">
+          <TransactionFeed settlements={settlements} me={address} loading={loading} deployed={deployed} error={error} limit={6} />
         </div>
       </div>
     </div>

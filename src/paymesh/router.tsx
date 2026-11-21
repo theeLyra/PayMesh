@@ -1,6 +1,7 @@
 import { useSyncExternalStore, type AnchorHTMLAttributes, type ReactNode } from 'react'
 import {
   Activity,
+  ArrowLeftRight,
   BarChart3,
   CalendarClock,
   Code2,
@@ -23,8 +24,9 @@ export interface NavItem {
 }
 
 export const NAV: NavItem[] = [
-  { path: '/', label: 'Payment Network', short: 'Network', icon: Globe },
+  { path: '/dashboard', label: 'Payment Network', short: 'Network', icon: Globe },
   { path: '/transfers', label: 'Transfers', short: 'Transfers', icon: Send },
+  { path: '/swap', label: 'Swap', short: 'Swap', icon: ArrowLeftRight },
   { path: '/recipients', label: 'Recipients', short: 'Recipients', icon: Users },
   { path: '/links', label: 'Payment Links', short: 'Links', icon: Link2 },
   { path: '/batch', label: 'Batch Payments', short: 'Batch', icon: Layers },
@@ -57,11 +59,17 @@ export function useSearch(): URLSearchParams {
   return new URLSearchParams(search)
 }
 
+/** Landing page and documentation render without any wallet code. */
+export const isPublicPath = (path: string) => path === '/' || path === '/docs' || path.startsWith('/docs/')
+
 export function navigate(to: string) {
-  if (to === window.location.pathname + window.location.search) return
-  window.history.pushState({}, '', to)
+  if (to === window.location.pathname + window.location.search + window.location.hash) return
+  const depth = (window.history.state as { pm?: number } | null)?.pm ?? 0
+  window.history.pushState({ pm: depth + 1 }, '', to)
   window.dispatchEvent(new Event(NAV_EVENT))
-  window.scrollTo({ top: 0 })
+  const hash = new URL(to, window.location.href).hash.slice(1)
+  if (hash) requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView())
+  else window.scrollTo({ top: 0 })
 }
 
 interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {

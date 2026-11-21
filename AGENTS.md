@@ -22,7 +22,9 @@ PayMesh: USDC payment dashboard on Arc Testnet. One contract, `contracts/PayMesh
 
 ## Key Files
 
-- `src/App.tsx` - Shell and page routing
+- `src/Root.tsx` - picks landing (`/`), docs (`/docs/*`) or the wallet app by URL; `src/AppRoot.tsx` holds the wallet providers and is lazy-loaded
+- `src/pages/Landing.tsx`, `src/pages/Docs.tsx`, `src/docs/*` - public pages and documentation content
+- `src/App.tsx` - App shell and page routing (dashboard is `/dashboard`)
 - `src/paymesh/` - ABIs, contract config, activity indexer (`ActivityProvider`), tx hook (`useTransact`), metrics
 - `src/pages/` - one file per sidebar page
 - `contracts/PayMesh.sol` - the single PayMesh contract
@@ -40,7 +42,7 @@ PayMesh: USDC payment dashboard on Arc Testnet. One contract, `contracts/PayMesh
 
 ## Deployed contracts
 
-Arc Testnet (deployed via platform wallet, USDC `0x3600...0000` as constructor arg; start block 72413319):
+Arc Testnet (deployed via platform wallet, USDC `0x3600...0000` as constructor arg; history start moved forward to the block at reset time (see VITE_PAYMESH_START_BLOCK in .env)):
 - PayMesh `0x9663bc6b89612134548878e7d88b639255fb4b08`
 
 Superseded (first split-contract version, not used by the app): PaymentRouter `0x4ee61a96...4395`, BatchPayment `0x18932964...8a95`, SplitPayment `0x785799d7...20f1`, PaymentEscrow `0x41e4d592...219c`, PaymentScheduler `0x2e0a7026...ff1a`.
@@ -51,3 +53,6 @@ Superseded (first split-contract version, not used by the app): PaymentRouter `0
 bun install
 bun run dev
 ```
+
+## Mainnet
+The app can target Arc mainnet with `VITE_NETWORK=mainnet` (default is testnet). Mainnet uses separate env keys (`VITE_PAYMESH_ADDRESS_MAINNET`, `VITE_PAYMESH_START_BLOCK_MAINNET`). No mainnet contract has been deployed by Arc Studio: the user deploys it themselves, steps in `docs/mainnet-deploy.md`. Mainnet token addresses (EURC, cirBTC) were read on chain and match the Arc contract-address reference.

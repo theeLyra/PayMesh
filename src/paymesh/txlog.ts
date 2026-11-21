@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import type { Hex } from 'viem'
+import { START_BLOCK } from './contracts'
 
 /**
  * Transactions submitted from this browser through PayMesh. Used only for
@@ -16,7 +17,8 @@ export interface TxRecord {
 
 const MAX_RECORDS = 200
 const listeners = new Set<() => void>()
-const keyFor = (address: string) => `paymesh:txlog:v1:${address.toLowerCase()}`
+// Tied to the start block so a history reset also clears this browser's timing and success-rate records.
+const keyFor = (address: string) => `paymesh:txlog:v1:${START_BLOCK ?? 0}:${address.toLowerCase()}`
 
 function read(address: string): TxRecord[] {
   try {

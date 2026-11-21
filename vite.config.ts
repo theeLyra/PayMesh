@@ -40,6 +40,8 @@ export default defineConfig({
       output: {
         // Long-lived vendor chunks cache between visits and download in parallel.
         manualChunks(id: string) {
+          // Keep Vite's tiny dynamic-import helper out of the heavy vendor chunks so the landing page never waits for them.
+          if (id.includes('vite/preload-helper') || id.includes('vite/modulepreload-polyfill')) return 'react'
           if (!id.includes('node_modules')) return undefined
           if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
           if (/node_modules\/(viem|abitype|ox|@noble|@scure)\//.test(id)) return 'viem'

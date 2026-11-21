@@ -49,7 +49,7 @@ export default function ActivityPage() {
   const loading = deployed && status !== 'ready' && status !== 'error' && settlements.length === 0
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader
         title="Activity"
         subtitle="Every verified payment settled by PayMesh contracts, straight from onchain events."
@@ -69,7 +69,7 @@ export default function ActivityPage() {
                 setScope(s)
                 setShown(25)
               }}
-              className={`min-h-[40px] rounded-lg px-3 text-sm font-semibold capitalize transition ${scope === s ? 'nav-active text-white' : 'border border-transparent text-pm-muted hover:bg-white/[0.05]'}`}
+              className={`min-h-[40px] rounded-lg px-3 text-sm font-semibold capitalize  ${scope === s ? 'nav-active text-pm-text' : 'border border-transparent text-pm-muted hover:bg-pm-text/[0.05]'}`}
             >
               {s === 'mine' ? 'My activity' : s}
             </button>

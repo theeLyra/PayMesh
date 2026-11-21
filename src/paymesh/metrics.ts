@@ -1,8 +1,6 @@
 import { formatUsdc } from '@/onchain-money'
 import type { Settlement } from './activityContext'
 
-/** A settlement counts as "live" for this long after its block and gets the full light show. */
-export const FRESH_SECONDS = 25
 export const HOUR = 3600
 export const DAY = 86400
 

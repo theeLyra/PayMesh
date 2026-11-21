@@ -11,7 +11,7 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: str
   return (
     <Card className="p-4">
       <div className="label">{label}</div>
-      <div className="tabular mt-1 font-display text-3xl font-bold gradient-text">{value}</div>
+      <div className="tabular mt-1 text-3xl font-bold text-pm-violet">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-pm-muted">{sub}</div>}
     </Card>
   )
@@ -34,8 +34,8 @@ function Breakdown({ title, items }: { title: string; items: Array<{ label: stri
                   {fmtUsdc(i.volume)} USDC · {i.count}
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full bg-gradient-to-r from-pm-violet to-pm-cyan" style={{ width: `${max > 0n ? Math.max(3, Number((i.volume * 100n) / max)) : 0}%` }} />
+              <div className="h-1.5 overflow-hidden rounded-full bg-pm-text/[0.06]">
+                <div className="h-full rounded-full bg-pm-violet" style={{ width: `${max > 0n ? Math.max(3, Number((i.volume * 100n) / max)) : 0}%` }} />
               </div>
             </li>
           ))}
@@ -65,7 +65,7 @@ export default function Analytics() {
   const avg = data.totals.count > 0 ? data.totals.volume / BigInt(data.totals.count) : 0n
 
   return (
-    <div className="animate-rise">
+    <div className="">
       <PageHeader title="Analytics" subtitle="Seven days of verified USDC settlements across every PayMesh contract. Nothing here is estimated." />
       <NotDeployed />
       {!deployed ? (
