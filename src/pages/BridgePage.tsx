@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AppKit } from '@circle-fin/app-kit'
-import { createViemAdapterFromProvider } from '@circle-fin/adapter-viem-v2'
+import { loadAppKit, prefetchCircleKits, type Adapter } from '@/paymesh/circleKit'
+import { BRIDGE_CHAINS_MAINNET, BRIDGE_CHAINS_TESTNET } from '@/paymesh/circleChains'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowDownUp } from 'lucide-react'
 import { isAddress, parseUnits, type EIP1193Provider, type PublicClient } from 'viem'
@@ -17,13 +17,8 @@ import { ChainPicker, type ChainOption } from './swap/ChainPicker'
 import { SwapStatus } from './swap/SwapStatus'
 import { useSwapTracker, type SwapStep } from './swap/swapTracker'
 
-const kit = new AppKit()
-
-/** Chains Circle CCTP supports for this network, read from the kit itself. */
-const CHAINS: ChainOption[] = kit
-  .getSupportedChains('bridge', { chainType: 'evm', isTestnet: !IS_MAINNET })
-  .map((c) => ({ id: c.chain as string, name: c.name }))
-  .sort((a, b) => (a.id === SWAP_CHAIN ? -1 : b.id === SWAP_CHAIN ? 1 : a.name.localeCompare(b.name)))
+/** Chains Circle CCTP supports for this network (copied from the SDK so the page renders at once). Arc is listed first. */
+const CHAINS: ChainOption[] = [...(IS_MAINNET ? BRIDGE_CHAINS_MAINNET : BRIDGE_CHAINS_TESTNET)].sort((a, b) => (a.id === SWAP_CHAIN ? -1 : b.id === SWAP_CHAIN ? 1 : a.name.localeCompare(b.name)))
 
 const DEFAULT_OTHER = CHAINS.find((c) => c.id === (IS_MAINNET ? 'Base' : 'Base_Sepolia'))?.id ?? CHAINS.find((c) => c.id !== SWAP_CHAIN)?.id ?? SWAP_CHAIN
 
@@ -115,7 +110,7 @@ export default function BridgePage() {
     return (await connector.getProvider()) as EIP1193Provider
   }
 
-  const buildParams = (i: Inputs, adapter: Awaited<ReturnType<typeof createViemAdapterFromProvider>>) => ({
+  const buildParams = (i: Inputs, adapter: Adapter) => ({
     from: { adapter, chain: i.from as never },
     to: { adapter, chain: i.to as never, ...(i.recipient.trim() ? { recipientAddress: i.recipient.trim() } : {}) },
     amount: i.amount.trim(),
@@ -124,7 +119,8 @@ export default function BridgePage() {
 
   const runQuote = async (i: Inputs, id: number, silent: boolean) => {
     try {
-      const adapter = await createViemAdapterFromProvider({ provider: await getProvider() })
+      const { kit, createAdapter } = await loadAppKit()
+      const adapter = await createAdapter({ provider: await getProvider() })
       const res = await kit.estimateBridge(buildParams(i, adapter))
       if (id !== seq.current) return
       const fees = (res.fees ?? []) as Quote['fees']
@@ -180,6 +176,10 @@ export default function BridgePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote, running, address])
   useEffect(() => () => window.clearTimeout(timer.current), [])
+  // Start downloading Circle's SDK as the page opens, so the first quote is quick.
+  useEffect(() => {
+    prefetchCircleKits('app')
+  }, [])
 
   // The click on the Transfer button is the confirmation. Nothing here runs on its own.
   const execute = async () => {
@@ -192,7 +192,8 @@ export default function BridgePage() {
     setOutcome(undefined)
     tracker.reset([{ id: 'prepare', label: 'Preparing your transfer', state: 'pending' }])
     try {
-      const adapter = await createViemAdapterFromProvider({ provider: tracker.wrapProvider(await getProvider()) })
+      const { kit, createAdapter } = await loadAppKit()
+      const adapter = await createAdapter({ provider: tracker.wrapProvider(await getProvider()) })
       const result = await kit.bridge(buildParams(i, adapter))
       const steps: SwapStep[] = result.steps.map((s, n) => ({
         id: `r-${n}`,

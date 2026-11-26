@@ -30,7 +30,7 @@ interface Store {
 const LOOKBACK_BLOCKS = 200_000
 const MAX_RECORDS = 3000
 const MAX_TIME_FETCH_PER_RUN = 120
-const POLL_MS = 3000
+const POLL_MS = 5000
 // The start block is part of the key, so moving it forward discards every older cached payment.
 const storeKey = () => `paymesh:index:v1:${CHAIN_ID}:${START_BLOCK ?? 0}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
 

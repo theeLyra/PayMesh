@@ -1,36 +1,23 @@
 import { Suspense, lazy, useEffect, useState, type ComponentType, type LazyExoticComponent } from 'react'
 import { ActivityProvider } from '@/paymesh/ActivityProvider'
+import { prefetchCircleKits } from '@/paymesh/circleKit'
+import { pageLoaders, prefetchRoute } from '@/paymesh/prefetch'
 import { usePath } from '@/paymesh/router'
 import { Footer } from '@/components/Footer'
 import { MobileNav, Sidebar } from '@/components/Sidebar'
 import { TopBar } from '@/components/TopBar'
 import { Skeleton } from '@/components/ui'
 
-const loaders: Record<string, () => Promise<{ default: ComponentType }>> = {
-  '/dashboard': () => import('@/pages/Dashboard'),
-  '/transfers': () => import('@/pages/Transfers'),
-  '/swap': () => import('@/pages/SwapPage'),
-  '/bridge': () => import('@/pages/BridgePage'),
-  '/gateway': () => import('@/pages/GatewayPage'),
-  '/recipients': () => import('@/pages/Recipients'),
-  '/links': () => import('@/pages/PaymentLinks'),
-  '/batch': () => import('@/pages/BatchPayments'),
-  '/scheduled': () => import('@/pages/ScheduledPayments'),
-  '/split': () => import('@/pages/SplitPayments'),
-  '/escrow': () => import('@/pages/EscrowPage'),
-  '/analytics': () => import('@/pages/Analytics'),
-  '/developers': () => import('@/pages/Developers'),
-  '/activity': () => import('@/pages/ActivityPage'),
-  '/settings': () => import('@/pages/SettingsPage'),
-}
+const pages = Object.fromEntries(Object.entries(pageLoaders).map(([path, load]) => [path, lazy(load)])) as Record<string, LazyExoticComponent<ComponentType>>
 
-const pages = Object.fromEntries(Object.entries(loaders).map(([path, load]) => [path, lazy(load)])) as Record<string, LazyExoticComponent<ComponentType>>
-
-/** Warm every page chunk once the first screen is idle so navigation feels instant. */
+/** Warm every page file once the first screen is idle, and Circle's SDKs too on a fast connection, so navigation feels instant. */
 function usePrefetchPages() {
   useEffect(() => {
-    // The swap, cross-chain and Gateway pages carry Circle's SDKs, so they load only when someone opens them.
-    const warm = () => Object.entries(loaders).forEach(([path, load]) => path !== '/swap' && path !== '/bridge' && path !== '/gateway' && void load())
+    const warm = () => {
+      Object.keys(pageLoaders).forEach((path) => prefetchRoute(path))
+      const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+      if (!conn?.saveData && (!conn?.effectiveType || conn.effectiveType === '4g')) window.setTimeout(() => prefetchCircleKits('both'), 2500)
+    }
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
     const handle = idle ? idle(warm) : window.setTimeout(warm, 1500)
     return () => {

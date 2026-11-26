@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
-import { UnifiedBalanceKit } from '@circle-fin/unified-balance-kit'
-import { createViemAdapterFromProvider } from '@circle-fin/adapter-viem-v2'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { loadUnifiedKit, prefetchCircleKits } from '@/paymesh/circleKit'
+import { GATEWAY_CHAINS_MAINNET, GATEWAY_CHAINS_TESTNET } from '@/paymesh/circleChains'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAddress, parseUnits, type EIP1193Provider, type PublicClient } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
@@ -16,15 +16,10 @@ import { ChainPicker } from './swap/ChainPicker'
 import { SwapStatus } from './swap/SwapStatus'
 import { useSwapTracker } from './swap/swapTracker'
 
-const kit = new UnifiedBalanceKit()
 const NETWORK = IS_MAINNET ? 'mainnet' : 'testnet'
 
-/** Chains Circle Gateway supports for USDC on this network, read from the kit. */
-const CHAINS = kit
-  .getSupportedChains('USDC')
-  .filter((c) => Boolean(c.isTestnet) === !IS_MAINNET && c.type === 'evm')
-  .map((c) => ({ id: c.chain as string, name: c.name }))
-  .sort((a, b) => a.name.localeCompare(b.name))
+/** Chains Circle Gateway supports for USDC on this network (copied from the SDK so the page renders at once). */
+const CHAINS = IS_MAINNET ? GATEWAY_CHAINS_MAINNET : GATEWAY_CHAINS_TESTNET
 const SPEND_TARGETS = CHAINS.filter((c) => c.id !== SWAP_CHAIN)
 const chainName = (id: string) => CHAINS.find((c) => c.id === id)?.name ?? id.replace(/_/g, ' ')
 
@@ -53,6 +48,9 @@ interface FeeLine {
 const feeText = (fees: FeeLine[]) => (fees.length === 0 ? 'None reported' : fees.map((f, i) => <span key={i} className="block">{Number(f.amount).toLocaleString('en-US', { maximumFractionDigits: 6 })} {f.token} <span className="text-pm-muted">({f.type})</span></span>))
 
 export default function GatewayPage() {
+  useEffect(() => {
+    prefetchCircleKits('unified')
+  }, [])
   const { address, connector } = useAccount()
   const publicClient = usePublicClient({ chainId: CHAIN_ID }) as PublicClient | undefined
   const queryClient = useQueryClient()
@@ -77,7 +75,7 @@ export default function GatewayPage() {
     refetchInterval: 20_000,
     staleTime: 10_000,
     queryFn: async () => {
-      const res = await kit.getBalances({ token: 'USDC', sources: { address: address as string }, networkType: NETWORK })
+      const res = await (await loadUnifiedKit()).kit.getBalances({ token: 'USDC', sources: { address: address as string }, networkType: NETWORK })
       const rows = res.breakdown.flatMap((b) => b.breakdown).map((r) => ({ chain: String(r.chain), amount: Number(r.confirmedBalance) }))
       return { total: Number(res.totalConfirmedBalance), pending: Number(res.totalPendingBalance ?? 0), rows }
     },
@@ -93,7 +91,8 @@ export default function GatewayPage() {
   const getAdapter = async (wrap: boolean) => {
     if (!connector) throw new Error('Wallet not connected')
     const provider = (await connector.getProvider()) as EIP1193Provider
-    return createViemAdapterFromProvider({ provider: wrap ? tracker.wrapProvider(provider) : provider })
+    const { createAdapter } = await loadUnifiedKit()
+    return createAdapter({ provider: wrap ? tracker.wrapProvider(provider) : provider })
   }
 
   const showFees = (kind: 'deposit' | 'spend', delay: number, fn: () => Promise<FeeLine[]>) => {
@@ -112,7 +111,7 @@ export default function GatewayPage() {
     if (!address || amt === undefined || (arcBalance !== undefined && amt > arcBalance)) return setFees(null)
     showFees('deposit', 600, async () => {
       const adapter = await getAdapter(false)
-      const res = await kit.estimateDeposit({ from: { adapter, chain: SWAP_CHAIN }, amount: value.trim(), token: 'USDC' })
+      const res = await (await loadUnifiedKit()).kit.estimateDeposit({ from: { adapter, chain: SWAP_CHAIN }, amount: value.trim(), token: 'USDC' })
       return res.fees
     })
   }
@@ -125,7 +124,7 @@ export default function GatewayPage() {
     if (!address || amt === undefined || (to.trim() !== '' && !isAddress(to.trim())) || (balance.data && Number(value) > balance.data.total)) return setFees(null)
     showFees('spend', 600, async () => {
       const adapter = await getAdapter(false)
-      const res = await kit.estimateSpend({ from: { adapter }, to: { adapter, chain: chain as never, ...(to.trim() ? { recipientAddress: to.trim() } : {}) }, amount: value.trim(), token: 'USDC' })
+      const res = await (await loadUnifiedKit()).kit.estimateSpend({ from: { adapter }, to: { adapter, chain: chain as never, ...(to.trim() ? { recipientAddress: to.trim() } : {}) }, amount: value.trim(), token: 'USDC' })
       return res.fees
     })
   }
@@ -139,11 +138,11 @@ export default function GatewayPage() {
     try {
       const adapter = await getAdapter(true)
       if (kind === 'deposit') {
-        const res = await kit.deposit({ from: { adapter, chain: SWAP_CHAIN }, amount: depositAmount.trim(), token: 'USDC' })
+        const res = await (await loadUnifiedKit()).kit.deposit({ from: { adapter, chain: SWAP_CHAIN }, amount: depositAmount.trim(), token: 'USDC' })
         tracker.upsert('complete', { label: 'Deposit complete', state: 'done', detail: `${res.amount} USDC added to your Gateway balance from ${CHAIN_FACTS.name}` })
         setDepositAmount('')
       } else {
-        const res = await kit.spend({ from: { adapter }, to: { adapter, chain: target as never, ...(recipient.trim() ? { recipientAddress: recipient.trim() } : {}) }, amount: spendAmount.trim(), token: 'USDC' })
+        const res = await (await loadUnifiedKit()).kit.spend({ from: { adapter }, to: { adapter, chain: target as never, ...(recipient.trim() ? { recipientAddress: recipient.trim() } : {}) }, amount: spendAmount.trim(), token: 'USDC' })
         tracker.upsert('complete', { label: 'Transfer complete', state: 'done', detail: `${spendAmount} USDC minted on ${chainName(String(res.destinationChain))}` })
         setSpendAmount('')
       }

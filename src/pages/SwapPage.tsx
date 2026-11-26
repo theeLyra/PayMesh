@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AppKit, type SwapEstimate } from '@circle-fin/app-kit'
-import { createViemAdapterFromProvider } from '@circle-fin/adapter-viem-v2'
+import type { SwapEstimate } from '@circle-fin/app-kit'
+import { loadAppKit, prefetchCircleKits } from '@/paymesh/circleKit'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowDownUp } from 'lucide-react'
 import type { EIP1193Provider, PublicClient } from 'viem'
@@ -16,7 +16,6 @@ import { SwapStatus } from './swap/SwapStatus'
 import { TokenPicker } from './swap/TokenPicker'
 import { useSwapTracker } from './swap/swapTracker'
 
-const kit = new AppKit()
 
 /** Swap Kit symbols for the three tokens Arc supports. */
 const KIT_SYMBOL: Record<string, 'USDC' | 'EURC' | 'CIRBTC'> = { USDC: 'USDC', EURC: 'EURC', cirBTC: 'CIRBTC' }
@@ -122,7 +121,8 @@ export default function SwapPage() {
 
   const runQuote = async (i: Inputs, id: number, silent: boolean) => {
     try {
-      const adapter = await createViemAdapterFromProvider({ provider: await getProvider() })
+      const { kit, createAdapter } = await loadAppKit()
+      const adapter = await createAdapter({ provider: await getProvider() })
       const estimate = await kit.estimateSwap({
         from: { adapter, chain: SWAP_CHAIN },
         tokenIn: KIT_SYMBOL[i.tokenIn],
@@ -188,6 +188,10 @@ export default function SwapPage() {
   }, [reviewed, swapping, address, chainId])
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
+  // Start downloading Circle's SDK as the page opens, so the first quote is quick.
+  useEffect(() => {
+    prefetchCircleKits('app')
+  }, [])
 
   // The user's click on the Swap button is the confirmation. Nothing here runs automatically.
   const executeSwap = async () => {
@@ -202,7 +206,8 @@ export default function SwapPage() {
     tracker.reset([{ id: 'prepare', label: 'Preparing your swap', state: 'pending' }])
     try {
       if (chainId !== CHAIN_ID) await switchChainAsync({ chainId: CHAIN_ID })
-      const adapter = await createViemAdapterFromProvider({ provider: tracker.wrapProvider(await getProvider()) })
+      const { kit, createAdapter } = await loadAppKit()
+      const adapter = await createAdapter({ provider: tracker.wrapProvider(await getProvider()) })
       const swapped = await kit.swap({
         from: { adapter, chain: SWAP_CHAIN },
         tokenIn: KIT_SYMBOL[i.tokenIn],

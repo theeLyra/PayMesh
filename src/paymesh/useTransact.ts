@@ -1,3 +1,4 @@
+import { useTokenBalances } from './useTokenBalances'
 import { useCallback, useState } from 'react'
 import { useAccount, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -114,18 +115,11 @@ export function useTransact() {
   return { transact, approveIfNeeded, pending }
 }
 
-/** Live USDC balance in the 6-decimal ERC-20 view (the same pool that pays gas on Arc). */
+/** Live USDC balance in the 6-decimal ERC-20 view (the same pool that pays gas on Arc). Shares one source with the balance card. */
 export function useUsdcBalance() {
-  const { address } = useAccount()
-  const query = useReadContract({
-    address: USDC_ADDRESS,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    chainId: CHAIN_ID,
-    query: { enabled: Boolean(address), refetchInterval: 8000 },
-  })
-  return { balance: query.data, isLoading: query.isLoading, isError: query.isError }
+  const { balances, isLoading, isError } = useTokenBalances()
+  const usdc = balances.find((b) => b.token.symbol === 'USDC')
+  return { balance: usdc?.raw, isLoading, isError }
 }
 
 export function useUsdcAllowance(spender: Address | undefined) {

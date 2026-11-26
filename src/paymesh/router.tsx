@@ -1,3 +1,4 @@
+import { prefetchRoute } from './prefetch'
 import { useSyncExternalStore, type AnchorHTMLAttributes, type ReactNode } from 'react'
 import {
   Activity,
@@ -86,6 +87,9 @@ export function Link({ to, children, onClick, ...rest }: LinkProps) {
     <a
       {...rest}
       href={to}
+      onPointerEnter={() => prefetchRoute(to)}
+      onTouchStart={() => prefetchRoute(to)}
+      onFocus={() => prefetchRoute(to)}
       onClick={(e) => {
         onClick?.(e)
         if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return

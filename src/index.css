@@ -40,6 +40,7 @@
 }
 
 html {
+  -webkit-tap-highlight-color: transparent;
   color-scheme: light;
 }
 html.dark {
@@ -135,4 +136,13 @@ body {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Taps respond at once: no double-tap zoom delay on controls. */
+a,
+button,
+input,
+select,
+[role='button'] {
+  touch-action: manipulation;
 }
