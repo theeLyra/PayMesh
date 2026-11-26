@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Badge, Button, Card, PageHeader, Skeleton, WalletGate, cx } from '@/components/ui'
 import { CHAIN_FACTS, CHAIN_ID } from '@/paymesh/chain'
 import { IS_MAINNET, SWAP_CHAIN } from '@/paymesh/network'
+import { useSearch } from '@/paymesh/router'
 import { WALLET_TOKENS, fmtToken, type WalletToken } from '@/paymesh/tokens'
 import { useTokenBalances } from '@/paymesh/useTokenBalances'
 import { SwapStatus } from './swap/SwapStatus'
@@ -88,7 +89,14 @@ export default function SwapPage() {
   const { balances } = useTokenBalances()
   const tracker = useSwapTracker(publicClient)
 
-  const [inputs, setInputs] = useState<Inputs>({ tokenIn: 'USDC', tokenOut: 'EURC', amount: '', slippageBps: 100 })
+  const search = useSearch()
+  const [inputs, setInputs] = useState<Inputs>(() => {
+    // Links like /swap?to=EURC open the page with that token already chosen.
+    const known = WALLET_TOKENS.map((t) => t.symbol)
+    const to = known.find((sym) => sym.toLowerCase() === (search.get('to') ?? '').toLowerCase()) ?? 'EURC'
+    const from = known.find((sym) => sym.toLowerCase() === (search.get('from') ?? '').toLowerCase() && sym !== to) ?? (to === 'USDC' ? 'EURC' : 'USDC')
+    return { tokenIn: from, tokenOut: to, amount: '', slippageBps: 100 }
+  })
   const inputsRef = useRef(inputs)
   const [reviewed, setReviewed] = useState<Reviewed | null>(null)
   const [quoting, setQuoting] = useState(false)

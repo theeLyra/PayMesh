@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { useActivity } from '@/paymesh/activityContext'
-import { WalletHero } from '@/components/WalletHero'
+import { ActionTiles } from '@/components/overview/ActionTiles'
+import { AssetsCard } from '@/components/overview/AssetsCard'
+import { BalanceHero } from '@/components/overview/BalanceHero'
+import { IntegrationHub } from '@/components/overview/IntegrationHub'
 import { StatCards } from '@/components/StatCards'
 import { MyTransactionsCard } from '@/components/MyTransactions'
 import { TransactionFeed } from '@/components/TransactionFeed'
@@ -14,8 +17,7 @@ import { NAV, Link } from '@/paymesh/router'
 import { useNow } from '@/paymesh/useNow'
 
 const ACTIONS: Array<{ to: string; title: string; desc: string }> = [
-  { to: '/transfers', title: 'Send USDC', desc: 'Pay any wallet with a category' },
-  { to: '/swap', title: 'Swap', desc: 'Swap USDC, EURC and cirBTC' },
+  { to: '/links', title: 'Payment links', desc: 'Share a link or QR to get paid' },
   { to: '/batch', title: 'Batch payment', desc: 'Pay many wallets at once' },
   { to: '/split', title: 'Split payment', desc: 'Divide one payment by shares' },
   { to: '/escrow', title: 'Escrow', desc: 'Hold funds until released' },
@@ -39,7 +41,12 @@ export default function Dashboard() {
     <div>
       <h1 className="sr-only">Overview</h1>
 
-      <WalletHero />
+      <div className="space-y-4">
+        <BalanceHero />
+        <ActionTiles />
+        <AssetsCard />
+        <IntegrationHub />
+      </div>
 
       <NotDeployed />
       {progress && (
@@ -49,7 +56,9 @@ export default function Dashboard() {
       )}
       {error && <div className="mb-4 rounded-xl border border-pm-bad/40 bg-pm-bad/10 px-4 py-3 text-sm text-pm-bad">Reconnecting to the network</div>}
 
-      <StatCards />
+      <div className="mt-6">
+        <StatCards />
+      </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
@@ -75,7 +84,7 @@ export default function Dashboard() {
           </section>
 
           <section>
-            <h2 className="label mb-3">Quick actions</h2>
+            <h2 className="label mb-3">More tools</h2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {ACTIONS.map((a) => {
                 const Icon = NAV.find((n) => n.path === a.to)?.icon
