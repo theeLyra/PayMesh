@@ -1,7 +1,6 @@
 import { BookOpen, ChevronsLeft, ChevronsRight, Ellipsis, X } from 'lucide-react'
 import { NAV, Link, usePath } from '@/paymesh/router'
 import { Logo } from './Logo'
-import { ThemeToggle } from './ThemeToggle'
 import { cx } from './ui'
 
 interface SidebarProps {
@@ -55,7 +54,6 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
           <BookOpen className="h-[18px] w-[18px] shrink-0" />
           {expanded && 'Documentation'}
         </Link>
-        <ThemeToggle withLabel={expanded} className={cx('w-full', expanded && 'justify-start px-3')} />
         <button
           onClick={onToggle}
           aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
@@ -112,7 +110,6 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
                 )
               })}
             </div>
-            <ThemeToggle withLabel className="mt-3 w-full" />
           </div>
         </div>
       )}

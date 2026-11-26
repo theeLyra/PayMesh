@@ -26,7 +26,7 @@ const ACTIONS: Array<{ to: string; title: string; desc: string }> = [
 
 export default function Dashboard() {
   const { address } = useAccount()
-  const { settlements, status, deployed, error, progress, windowStart } = useActivity()
+  const { settlements, allTime, status, deployed, error, progress, windowStart } = useActivity()
   const nowSec = Math.floor(useNow(15_000) / 1000)
   const loading = deployed && status !== 'ready' && status !== 'error' && settlements.length === 0
 
@@ -68,9 +68,14 @@ export default function Dashboard() {
                 <h2 className="label">Volume, last 24 hours</h2>
                 <div className="tabular mt-1 text-3xl font-bold tracking-tight text-pm-text">${fmtCompactUsdc(day.cur.volume)}</div>
               </div>
-              <span className="rounded-full border border-pm-line bg-pm-bg px-3 py-1.5 text-xs font-medium text-pm-muted">
-                <span className="font-semibold text-pm-text">{day.cur.count.toLocaleString('en-US')}</span> verified payments
-              </span>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-pm-line bg-pm-bg px-3 py-1.5 text-xs font-medium text-pm-muted">
+                  <span className="font-semibold text-pm-text">{day.cur.count.toLocaleString('en-US')}</span> payments in 24h
+                </span>
+                <span className="rounded-full border border-pm-line bg-pm-bg px-3 py-1.5 text-xs font-medium text-pm-muted">
+                  <span className="tabular font-semibold text-pm-text">${fmtCompactUsdc(allTime.volume)}</span> all time · {allTime.count.toLocaleString('en-US')} payments
+                </span>
+              </div>
             </div>
             <div className="mt-4">
               {deployed ? <AreaChart values={day.buckets.volume} height={190} className="text-pm-violet" /> : <div className="h-[190px]" />}
@@ -80,7 +85,7 @@ export default function Dashboard() {
                 <span>Now</span>
               </div>
             </div>
-            {windowStart !== undefined && !progress && <p className="mt-3 text-xs text-pm-muted">Verified onchain payments from block {windowStart.toLocaleString('en-US')}.</p>}
+            {windowStart !== undefined && !progress && <p className="mt-3 text-xs text-pm-muted">Every PayMesh payment is counted, read from block {windowStart.toLocaleString('en-US')}.</p>}
           </section>
 
           <section>

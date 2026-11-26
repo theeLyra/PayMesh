@@ -1,0 +1,1 @@
+import{r as e}from"./react-CCDOw-Dz.js";const r=e.createContext(null);function o(){const t=e.useContext(r);if(!t)throw new Error("useActivity must be used inside ActivityProvider");return t}export{r as A,o as u};

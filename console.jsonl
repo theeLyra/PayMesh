@@ -57,3 +57,57 @@
 {"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795716025665}
 {"level":"debug","message":"[vite] connected.","timestamp":1795716055947}
 {"level":"debug","message":"[vite] connected.","timestamp":1795716208528}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795717366791}
+{"level":"debug","message":"[vite] connected.","timestamp":1795717371453}
+{"level":"debug","message":"[vite] hot updated: /src/components/TopBar.tsx","timestamp":1795717383273}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717383273}
+{"level":"debug","message":"[vite] hot updated: /src/components/TopBar.tsx","timestamp":1795717389212}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717389212}
+{"level":"debug","message":"[vite] hot updated: /src/components/TopBar.tsx","timestamp":1795717394736}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717394736}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795717511831}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717524848}
+{"level":"debug","message":"[vite] invalidate /src/paymesh/router.tsx: Could not Fast Refresh (\"NAV\" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports","timestamp":1795717524848}
+{"level":"debug","message":"[vite] hot updated: /src/paymesh/router.tsx","timestamp":1795717524848}
+{"level":"debug","message":"[vite] hot updated: /src/App.tsx","timestamp":1795717524848}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717527241}
+{"level":"debug","message":"[vite] hot updated: /src/Root.tsx","timestamp":1795717527241}
+{"level":"debug","message":"[vite] hot updated: /src/pages/Landing.tsx","timestamp":1795717527241}
+{"level":"debug","message":"[vite] hot updated: /src/pages/Docs.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/components/BackButton.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/App.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] invalidate /src/docs/blocks.tsx: Could not Fast Refresh (\"blockText\" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/docs/blocks.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/components/Sidebar.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/components/TopBar.tsx","timestamp":1795717527242}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717527588}
+{"level":"debug","message":"[vite] hot updated: /src/pages/Docs.tsx","timestamp":1795717527588}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795717851515}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795717869926}
+{"level":"debug","message":"[vite] connected.","timestamp":1795717874460}
+{"level":"debug","message":"[vite] hot updated: /src/components/TopBar.tsx","timestamp":1795717883457}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795717883458}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795718011955}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718018387}
+{"level":"debug","message":"[vite] hot updated: /src/paymesh/ActivityProvider.tsx","timestamp":1795718041422}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795718041422}
+{"level":"debug","message":"(previous line repeated 1× more)","timestamp":1795718042321}
+{"level":"debug","message":"[vite] hot updated: /src/paymesh/ActivityProvider.tsx","timestamp":1795718042320}
+{"level":"debug","message":"(previous line repeated 1× more)","timestamp":1795718050895}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795718050895}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718266843}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795718440604}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718446404}
+{"level":"debug","message":"[vite] hot updated: /src/paymesh/ActivityProvider.tsx","timestamp":1795718512650}
+{"level":"debug","message":"[vite] hot updated: /src/index.css","timestamp":1795718512650}
+{"level":"debug","message":"(previous line repeated 1× more)","timestamp":1795718513625}
+{"level":"debug","message":"[vite] hot updated: /src/paymesh/ActivityProvider.tsx","timestamp":1795718513625}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718532070}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718534671}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795718588851}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718591064}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795718791557}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718803539}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718804052}
+{"level":"log","message":"[vite] server connection lost. Polling for restart...","timestamp":1795718829748}
+{"level":"debug","message":"[vite] connected.","timestamp":1795718834415}

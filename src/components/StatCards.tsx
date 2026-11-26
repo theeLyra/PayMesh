@@ -53,7 +53,7 @@ function OpRow({ label, value, loading, to }: { label: string; value: bigint | u
 }
 
 export function StatCards() {
-  const { settlements, status, deployed, timesPartial, blockTimeSec } = useActivity()
+  const { settlements, allTime, status, deployed, timesPartial, blockTimeSec, historyReady } = useActivity()
   const { address } = useAccount()
   const txLog = useTxLog(address)
   const ops = useOperations()
@@ -69,7 +69,6 @@ export function StatCards() {
 
   const finals = txLog.filter((t) => t.status !== 'pending')
   const successes = finals.filter((t) => t.status === 'success')
-  const successRate = finals.length > 0 ? (successes.length / finals.length) * 100 : undefined
   const timings = successes
     .filter((t) => t.confirmedAt !== undefined)
     .slice(0, 20)
@@ -93,6 +92,10 @@ export function StatCards() {
           <>
             <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">${fmtCompactUsdc(volume.cur.volume)}</div>
             <Delta pct={pctChange(volume.cur.volume, volume.prev.volume)} suffix="vs previous 24h" />
+            <div className="mt-2 text-xs text-pm-muted">
+              <span className="tabular font-semibold text-pm-text">${fmtCompactUsdc(allTime.volume)}</span> all time · {allTime.count.toLocaleString('en-US')} payments
+              {!historyReady && <span className="text-pm-warn"> (still counting)</span>}
+            </div>
             <MiniBars values={volume.buckets.volume} height={34} className="mt-auto" />
             {timesPartial && <div className="text-[11px] text-pm-warn">Partial: block times still loading</div>}
           </>
@@ -106,15 +109,12 @@ export function StatCards() {
           <Skeleton className="mt-3 h-20 w-full" />
         ) : (
           <>
-            <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">{volume.cur.count.toLocaleString('en-US')}</div>
+            <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">{allTime.count.toLocaleString('en-US')}</div>
             <span className="text-xs text-pm-muted">
-              confirmed in 24h
-              {successRate !== undefined && (
-                <>
-                  {' · '}
-                  <span className="text-pm-good">{successRate.toFixed(1)}%</span> of your {finals.length}
-                </>
-              )}
+              confirmed onchain through PayMesh
+              {' · '}
+              <span className="font-semibold text-pm-text">{volume.cur.count.toLocaleString('en-US')}</span> in the last 24h
+              {!historyReady && <span className="text-pm-warn"> (still counting)</span>}
             </span>
             <Sparkline values={volume.buckets.count} height={34} className="mt-auto text-pm-violet" />
           </>

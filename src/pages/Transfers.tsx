@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { isAddress } from 'viem'
-import { Send } from 'lucide-react'
+import { ExternalLink, Send } from 'lucide-react'
 import { paymeshAbi } from '@/paymesh/abis'
 import { useActivity } from '@/paymesh/activityContext'
 import { PAYMESH } from '@/paymesh/contracts'
-import { encodeCategory, tryParseUsdc } from '@/paymesh/format'
+import { addressUrl } from '@/paymesh/chain'
+import { encodeCategory, shortAddress, tryParseUsdc } from '@/paymesh/format'
+import { LogoMark } from '@/components/Logo'
 import { useSearch } from '@/paymesh/router'
 import { ScanLine } from 'lucide-react'
 import { ScanModal } from '@/components/ScanModal'
@@ -14,6 +16,24 @@ import { AmountInput, CategorySelect, FormError, amountError } from '@/component
 import { FeedRow } from '@/components/TransactionFeed'
 import { useNow } from '@/paymesh/useNow'
 import { Button, Card, EmptyState, Field, NotDeployed, PageHeader, WalletGate } from '@/components/ui'
+
+/** Shows which contract carries the payment: your own PayMesh router. */
+function RouterBadge({ router }: { router: string | undefined }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-pm-line bg-pm-bg px-3 py-2.5">
+      <LogoMark size={30} />
+      <div className="min-w-0 flex-1">
+        <div className="label">Payment router</div>
+        <div className="truncate text-sm font-semibold text-pm-text">PayMesh {router && <span className="font-mono text-xs font-medium text-pm-muted">{shortAddress(router)}</span>}</div>
+      </div>
+      {router && (
+        <a href={addressUrl(router)} target="_blank" rel="noopener noreferrer" aria-label="View the PayMesh router on the explorer" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-pm-muted hover:bg-pm-text/5 hover:text-pm-text">
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  )
+}
 
 export default function Transfers() {
   const search = useSearch()
@@ -101,6 +121,7 @@ export default function Transfers() {
               <Field label="Memo (optional)">
                 <input className="input" maxLength={140} placeholder="What is this payment for?" value={memo} onChange={(e) => setMemo(e.target.value)} />
               </Field>
+              <RouterBadge router={router} />
               <Button className="w-full" onClick={() => void send()} disabled={!canSend} busy={pending !== null}>
                 <Send className="h-4 w-4" />
                 {pending ? `${pending}...` : 'Send USDC'}

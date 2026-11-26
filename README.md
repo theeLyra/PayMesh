@@ -34,6 +34,7 @@ bun install
 bun run dev          # start the app
 bun run build        # production build
 bun run check        # lint and typecheck
+bun run snapshot     # refresh the built-in payment history (run before each build)
 bun run contracts:build
 bun run contracts:test
 ```
@@ -46,6 +47,8 @@ Set these in `.env` after deploying the contracts. They are public values.
 - `VITE_PAYMESH_START_BLOCK`: block the PayMesh contract was deployed at, so history is never scanned from genesis
 - `VITE_NETWORK`: `testnet` (default) or `mainnet`. Mainnet moves real funds; see `docs/mainnet-deploy.md`
 - `VITE_PAYMESH_ADDRESS_MAINNET` and `VITE_PAYMESH_START_BLOCK_MAINNET`: the same two values for a mainnet deployment, used only when `VITE_NETWORK=mainnet`
+
+The snapshot step reads every payment since the start block from the network, so the dashboard shows all-time volume at once. It only needs `RPC_URL_Arc` (mainnet) or `RPC_URL_Arc_Testnet` if you want to use your own RPC provider; both are optional.
 
 Until the address is set, each page shows a "contract not deployed" notice and sending is disabled.
 

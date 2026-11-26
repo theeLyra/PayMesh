@@ -4,7 +4,8 @@ import type { Address, Hex } from 'viem'
 import { settledEvent } from './abis'
 import { ActivityContext, type ActivityState, type IndexProgress, type Settlement } from './activityContext'
 import { CHAIN_ID } from './chain'
-import { ANY_DEPLOYED, DEPLOYED_ADDRESSES, START_BLOCK } from './contracts'
+import { ANY_DEPLOYED, DEPLOYED_ADDRESSES, PAYMESH, START_BLOCK } from './contracts'
+import snapshotJson from './snapshot.json'
 
 interface StoredRecord {
   id: string
@@ -21,30 +22,46 @@ interface StoredRecord {
 }
 
 interface Store {
-  v: 1
+  v: 2
   lastBlock: number
   records: StoredRecord[]
   times: Record<string, number>
+  /** Running totals over every settlement since the start block. They never shrink when old records are trimmed. */
+  totalVolume: string
+  totalCount: number
 }
 
+/** Only used when no start block is configured. With a start block the whole history is read. */
 const LOOKBACK_BLOCKS = 200_000
-const MAX_RECORDS = 3000
+const MAX_RECORDS = 5000
 const MAX_TIME_FETCH_PER_RUN = 120
 const POLL_MS = 5000
 // The start block is part of the key, so moving it forward discards every older cached payment.
-const storeKey = () => `paymesh:index:v1:${CHAIN_ID}:${START_BLOCK ?? 0}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
+const storeKey = () => `paymesh:index:v2:${CHAIN_ID}:${START_BLOCK ?? 0}:${DEPLOYED_ADDRESSES.join('').toLowerCase().slice(0, 400)}`
+
+/**
+ * A snapshot of the whole history is built into the app (see scripts/snapshot.ts). It is used only when it
+ * belongs to this exact contract and start block, so a wrong or stale file can never show another contract's volume.
+ */
+function snapshotStore(): Store | undefined {
+  const snap = snapshotJson
+  if (!PAYMESH || snap.chainId !== CHAIN_ID || snap.address !== PAYMESH.toLowerCase() || snap.startBlock !== (START_BLOCK ?? 0) || snap.lastBlock <= 0) return undefined
+  return { v: 2, lastBlock: snap.lastBlock, records: snap.records as unknown as StoredRecord[], times: snap.times, totalVolume: snap.totalVolume, totalCount: snap.totalCount }
+}
 
 function loadStore(): Store {
+  const snap = snapshotStore()
   try {
     const raw = localStorage.getItem(storeKey())
     if (raw) {
       const parsed = JSON.parse(raw) as Store
-      if (parsed.v === 1) return parsed
+      // A saved copy that is already past the snapshot is newer, so it wins.
+      if (parsed.v === 2 && (!snap || parsed.lastBlock >= snap.lastBlock)) return parsed
     }
   } catch {
     /* corrupted cache is simply rebuilt */
   }
-  return { v: 1, lastBlock: 0, records: [], times: {} }
+  return snap ?? { v: 2, lastBlock: 0, records: [], times: {}, totalVolume: '0', totalCount: 0 }
 }
 
 function saveStore(store: Store) {
@@ -64,6 +81,7 @@ const toSettlement = (r: StoredRecord, times: Record<string, number>): Settlemen
 
 const byNewest = (a: Settlement, b: Settlement) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
 const byNewestStored = (a: StoredRecord, b: StoredRecord) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
+const totalsOf = (store: Store) => ({ volume: BigInt(store.totalVolume), count: store.totalCount })
 const buildList = (store: Store) => store.records.map((r) => toSettlement(r, store.times)).sort(byNewest)
 
 type Client = NonNullable<ReturnType<typeof usePublicClient>>
@@ -76,6 +94,12 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const [initialStore] = useState(loadStore)
   const storeRef = useRef<Store>(initialStore)
   const [settlements, setSettlements] = useState<Settlement[]>(() => buildList(initialStore))
+  const [allTime, setAllTime] = useState(() => totalsOf(initialStore))
+  // True from the first paint when the totals already cover every block up to the snapshot.
+  const [seeded] = useState(() => {
+    const snap = snapshotStore()
+    return snap !== undefined && initialStore.lastBlock >= snap.lastBlock
+  })
   const [status, setStatus] = useState<ActivityState['status']>('idle')
   const [error, setError] = useState<string>()
   const [head, setHead] = useState<number>()
@@ -93,7 +117,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       const store = storeRef.current
       const chainHead = Number(await client.getBlockNumber())
       setHead((h) => (h === chainHead ? h : chainHead))
-      const floor = Math.max(START_BLOCK ?? 0, chainHead - LOOKBACK_BLOCKS, 0)
+      const floor = START_BLOCK ?? Math.max(chainHead - LOOKBACK_BLOCKS, 0)
       const from = Math.max(store.lastBlock + 1, floor)
       setWindowStart((w) => (w === floor ? w : floor))
       const flags = { changed: false }
@@ -103,9 +127,17 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
         await scanRange(client, from, chainHead, (found, nextCursor) => {
           if (found.length > 0) {
             const known = new Set(store.records.map((r) => r.id))
-            for (const rec of found) if (!known.has(rec.id)) store.records.push(rec)
+            let volume = BigInt(store.totalVolume)
+            for (const rec of found) {
+              if (known.has(rec.id)) continue
+              store.records.push(rec)
+              volume += BigInt(rec.amount)
+              store.totalCount += 1
+            }
+            store.totalVolume = volume.toString()
             store.records = store.records.filter((r) => r.blockNumber >= floor).sort(byNewestStored).slice(0, MAX_RECORDS)
             flags.changed = true
+            setAllTime(totalsOf(store))
           }
           // Remember how far we got, so a failure or reload resumes here instead of starting over.
           store.lastBlock = nextCursor - 1
@@ -124,6 +156,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       if (flags.changed) {
         saveStore(store)
         setSettlements(buildList(store))
+        setAllTime(totalsOf(store))
       } else if (from <= chainHead) {
         saveStore(store)
       }
@@ -163,8 +196,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const timesPartial = useMemo(() => settlements.some((s) => s.timestamp === undefined), [settlements])
 
   const value = useMemo<ActivityState>(
-    () => ({ deployed: ANY_DEPLOYED, settlements, status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh }),
-    [settlements, status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh],
+    () => ({ deployed: ANY_DEPLOYED, settlements, allTime, historyReady: seeded || status === 'ready', status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh }),
+    [settlements, allTime, seeded, status, error, head, progress, windowStart, blockTimeSec, timesPartial, updatedAt, refresh],
   )
 
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>

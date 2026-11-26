@@ -27,6 +27,10 @@ export interface IndexProgress {
 export interface ActivityState {
   deployed: boolean
   settlements: Settlement[]
+  /** Every settlement since the contract's start block: total USDC volume (base units) and payment count. */
+  allTime: { volume: bigint; count: number }
+  /** True when allTime covers every block from the start block up to a recent block, so the total is exact. */
+  historyReady: boolean
   status: 'idle' | 'indexing' | 'ready' | 'error'
   error?: string
   head?: number
