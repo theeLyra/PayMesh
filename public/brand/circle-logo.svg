@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <title>Circle</title>
+  <defs>
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="50" y1="300" x2="320" y2="70"><stop offset="0" stop-color="#68D3F8"/><stop offset="1" stop-color="#84F4B3"/></linearGradient>
+    <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="332" y1="70" x2="72" y2="310"><stop offset="0" stop-color="#B195F7"/><stop offset="1" stop-color="#63BDFF"/></linearGradient>
+  </defs>
+  <path d="M63.84 279.75 A163 163 0 0 1 307.45 72.42 L242.26 148.48 A63 63 0 0 0 149.34 227.55 L121.95 244.28 A95 95 0 0 1 252.95 117.42 L267.00 88.61 A127 127 0 0 0 94.59 260.97 Z" fill="url(#a)" stroke="url(#a)" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M63.84 279.75 A163 163 0 0 1 307.45 72.42 L242.26 148.48 A63 63 0 0 0 149.34 227.55 L121.95 244.28 A95 95 0 0 1 252.95 117.42 L267.00 88.61 A127 127 0 0 0 94.59 260.97 Z" fill="url(#b)" stroke="url(#b)" stroke-width="12" stroke-linejoin="round" transform="rotate(180 206 200)"/>
+</svg>

@@ -31,7 +31,7 @@ type IntegrationStatus = 'live' | 'beta' | 'setup'
 const STATUS_STYLE: Record<IntegrationStatus, { label: string; cls: string }> = {
   live: { label: 'Live', cls: 'border-pm-good/40 bg-pm-good/10 text-pm-good' },
   beta: { label: 'Beta', cls: 'border-pm-warn/50 bg-pm-warn/10 text-pm-warn' },
-  setup: { label: 'Needs setup', cls: 'border-pm-line text-pm-muted' },
+  setup: { label: 'Upcoming', cls: 'border-pm-line text-pm-muted' },
 }
 
 const INTEGRATIONS: Array<{ icon: LucideIcon; name: string; status: IntegrationStatus; body: string; app?: string; doc: string }> = [
@@ -212,7 +212,7 @@ export default function Landing() {
         <section id="circle" className="border-y border-pm-line bg-pm-panel">
           <div className="mx-auto max-w-[1120px] scroll-mt-24 px-4 py-16 sm:px-6">
             <h2 className="text-3xl font-semibold tracking-tight">Powered by Circle on Arc</h2>
-            <p className="mt-2 max-w-2xl text-pretty text-pm-muted">Each integration shows its real status. Something is marked Live only after it has run end to end, Beta while quotes work and first transfers are being confirmed, and Needs setup when it depends on credentials or infrastructure.</p>
+            <p className="mt-2 max-w-2xl text-pretty text-pm-muted">Each integration shows its real status. Something is marked Live only after it has run end to end, Beta while quotes work and first transfers are being confirmed, and Upcoming when it is not built yet or depends on credentials or infrastructure.</p>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               {INTEGRATIONS.map((i) => (
                 <article key={i.name} className="glass flex flex-col rounded-xl p-5">

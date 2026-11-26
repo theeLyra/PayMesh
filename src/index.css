@@ -148,16 +148,6 @@ select,
 }
 
 /* Overview surfaces: soft lavender glass in light theme, deep indigo in dark theme. */
-.ov-hero {
-  background: linear-gradient(115deg, #f0f2ff 0%, #e6eaff 42%, #ddd6fb 100%);
-  border: 1px solid rgb(255 255 255 / 0.8);
-  box-shadow: 0 22px 44px -26px rgb(79 70 229 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.9);
-}
-.dark .ov-hero {
-  background: linear-gradient(115deg, #15163a 0%, #1b1b4a 45%, #2a2372 100%);
-  border-color: rgb(255 255 255 / 0.08);
-  box-shadow: 0 22px 44px -26px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.06);
-}
 .ov-tile {
   background: linear-gradient(180deg, #ffffff 0%, #f3f4ff 100%);
   border: 1px solid rgb(255 255 255 / 0.9);
@@ -168,6 +158,53 @@ select,
   border-color: rgb(255 255 255 / 0.07);
   box-shadow: 0 14px 28px -20px rgb(0 0 0 / 0.7);
 }
+/* Quick actions (Send, Receive, Swap, Bridge): flat panels, stacked on phones and tablets, side by side on wide screens. */
+.act-tile {
+  display: flex;
+  min-height: 108px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 4px;
+  border-radius: 16px;
+  text-align: center;
+  background: rgb(var(--pm-panel));
+  border: 1px solid rgb(var(--pm-line));
+}
+.act-tile:hover {
+  border-color: rgb(var(--pm-accent) / 0.55);
+}
+.act-tile:active {
+  background: rgb(var(--pm-accent) / 0.08);
+  transform: scale(0.97);
+}
+.act-tile:focus-visible {
+  outline: 2px solid rgb(var(--pm-accent));
+  outline-offset: 2px;
+}
+.act-badge {
+  display: grid;
+  height: 52px;
+  width: 52px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 14px;
+  color: rgb(var(--pm-accent));
+  background: rgb(var(--pm-accent) / 0.12);
+}
+@media (min-width: 1280px) {
+  .act-tile {
+    min-height: 88px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    text-align: left;
+  }
+}
+
 .ov-hub {
   background: radial-gradient(120% 140% at 100% 100%, #3b3fd8 0%, rgb(59 63 216 / 0) 55%), linear-gradient(120deg, #070b24 0%, #0b1038 60%, #101655 100%);
 }

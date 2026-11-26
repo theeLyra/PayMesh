@@ -117,7 +117,7 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
         </div>
       )}
       <nav
-        className="fixed inset-x-2 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 flex gap-0.5 rounded-2xl border border-pm-line bg-pm-panel p-1 shadow-lg md:hidden"
+        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 flex gap-1 rounded-[26px] border border-pm-line bg-pm-panel/95 p-1.5 shadow-[0_18px_40px_-16px_rgb(79_70_229/0.45)] backdrop-blur md:hidden"
         aria-label="Primary"
       >
         {primary.map((item) => {
@@ -129,7 +129,7 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
               to={item.path}
               onClick={() => setMoreOpen(false)}
               aria-current={active ? 'page' : undefined}
-              className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold', active ? 'bg-pm-violet/10 text-pm-violet' : 'text-pm-muted hover:bg-pm-text/5')}
+              className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[20px] text-[11px] font-semibold', active ? 'bg-pm-violet/15 text-pm-violet shadow-[inset_0_0_0_1px_rgb(var(--pm-accent)/0.25)]' : 'text-pm-muted hover:bg-pm-text/5')}
             >
               <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.9} />
               <span className="whitespace-nowrap tracking-tight">{item.short}</span>
@@ -139,7 +139,7 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
         <button
           onClick={() => setMoreOpen(!moreOpen)}
           aria-expanded={moreOpen}
-          className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold', moreOpen || moreActive ? 'bg-pm-violet/10 text-pm-violet' : 'text-pm-muted hover:bg-pm-text/5')}
+          className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[20px] text-[11px] font-semibold', moreOpen || moreActive ? 'bg-pm-violet/15 text-pm-violet shadow-[inset_0_0_0_1px_rgb(var(--pm-accent)/0.25)]' : 'text-pm-muted hover:bg-pm-text/5')}
         >
           <Ellipsis className="h-[22px] w-[22px]" strokeWidth={moreOpen || moreActive ? 2.4 : 1.9} />
           More

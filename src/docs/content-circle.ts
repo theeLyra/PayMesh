@@ -63,13 +63,13 @@ export function circleDocs(): DocPage[] {
       slug: 'circle-integrations',
       title: 'Circle integrations',
       group: 'Circle',
-      summary: 'What is live, what is in beta and what needs setup, with the requirement for each.',
+      summary: 'What is live, what is in beta and what is upcoming, with the requirement for each.',
       sections: [
         {
           id: 'status',
           title: 'Status at a glance',
           blocks: [
-            { t: 'p', text: 'Something is called Live only after it has run end to end. Beta means live quotes work and the first transfer from your wallet confirms it. Needs setup means PayMesh does not offer it yet and the requirement is listed below.' },
+            { t: 'p', text: 'Something is called Live only after it has run end to end. Beta means live quotes work and the first transfer from your wallet confirms it. Upcoming means PayMesh does not offer it yet and the requirement is listed below.' },
             {
               t: 'table',
               head: ['Product', 'Status', 'What is verified'],
@@ -78,9 +78,9 @@ export function circleDocs(): DocPage[] {
                 ['Circle swap aggregator', 'Live', 'Swaps run from PayMesh wallets and appear in wallet history.'],
                 ['CCTP V2 cross-chain', 'Beta', 'Routes and fee quotes read live from Circle. First full transfer pending.'],
                 ['Circle Gateway', 'Beta', 'Unified balance and deposit fee quote read live. First deposit and spend pending.'],
-                ['Programmable Wallets', 'Needs setup', 'Not integrated.'],
-                ['Paymaster', 'Needs setup', 'Not integrated.'],
-                ['Merchant API, invoices, webhooks', 'Needs setup', 'Not built yet.'],
+                ['Programmable Wallets', 'Upcoming', 'Not integrated.'],
+                ['Paymaster', 'Upcoming', 'Not integrated.'],
+                ['Merchant API, invoices, webhooks', 'Upcoming', 'Not built yet.'],
               ],
             },
           ],
