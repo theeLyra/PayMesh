@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { useAccount } from 'wagmi'
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, Layers, Timer, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useActivity } from '@/paymesh/activityContext'
 import { fmtCompactUsdc } from '@/paymesh/format'
 import { DAY, bucketize, pctChange, totalsBetween } from '@/paymesh/metrics'
@@ -11,10 +11,15 @@ import { MiniBars, Sparkline } from './charts'
 import { useNow } from '@/paymesh/useNow'
 import { Skeleton, cx } from './ui'
 
-function StatShell({ title, children }: { title: string; children: ReactNode }) {
+function StatShell({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
   return (
-    <div className="glass flex min-h-[148px] flex-col rounded-xl p-4">
-      <div className="label">{title}</div>
+    <div className="glass flex min-h-[160px] flex-col rounded-2xl p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="label">{title}</div>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pm-violet/10 text-pm-violet">
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+      </div>
       {children}
     </div>
   )
@@ -79,29 +84,29 @@ export function StatCards() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <StatShell title="Total volume (24H)">
+      <StatShell title="Total volume (24H)" icon={TrendingUp}>
         {!deployed ? (
           <Unavailable text="Contracts not deployed" />
         ) : loadingData ? (
           <Skeleton className="mt-3 h-20 w-full" />
         ) : (
           <>
-            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">${fmtCompactUsdc(volume.cur.volume)}</div>
+            <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">${fmtCompactUsdc(volume.cur.volume)}</div>
             <Delta pct={pctChange(volume.cur.volume, volume.prev.volume)} suffix="vs previous 24h" />
             <MiniBars values={volume.buckets.volume} height={34} className="mt-auto" />
-            {timesPartial && <div className="text-[10px] text-pm-warn">Partial: block times still loading</div>}
+            {timesPartial && <div className="text-[11px] text-pm-warn">Partial: block times still loading</div>}
           </>
         )}
       </StatShell>
 
-      <StatShell title="Successful payments">
+      <StatShell title="Successful payments" icon={CheckCircle2}>
         {!deployed ? (
           <Unavailable text="Contracts not deployed" />
         ) : loadingData ? (
           <Skeleton className="mt-3 h-20 w-full" />
         ) : (
           <>
-            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">{volume.cur.count.toLocaleString('en-US')}</div>
+            <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">{volume.cur.count.toLocaleString('en-US')}</div>
             <span className="text-xs text-pm-muted">
               confirmed in 24h
               {successRate !== undefined && (
@@ -116,12 +121,12 @@ export function StatCards() {
         )}
       </StatShell>
 
-      <StatShell title="Average settlement">
+      <StatShell title="Average settlement" icon={Timer}>
         {avgSettle === undefined ? (
           <Unavailable text="No measurements yet. Send a payment and its confirmation time is measured here." />
         ) : (
           <>
-            <div className="tabular mt-1 text-[28px] font-semibold leading-tight text-pm-text">{avgSettle.toFixed(1)} sec</div>
+            <div className="tabular mt-1 text-[32px] font-bold leading-tight tracking-tight text-pm-text">{avgSettle.toFixed(1)} sec</div>
             {settleDelta !== undefined ? (
               <span className={cx('inline-flex items-center gap-1 text-xs', settleDelta <= 0 ? 'text-pm-good' : 'text-pm-warn')}>
                 {settleDelta <= 0 ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
@@ -133,10 +138,10 @@ export function StatCards() {
             <Sparkline values={timings} height={34} className="mt-auto text-pm-violet" />
           </>
         )}
-        {avgSettle === undefined && blockTimeSec !== undefined && <div className="text-[10px] text-pm-muted">Block time {blockTimeSec.toFixed(2)} sec</div>}
+        {avgSettle === undefined && blockTimeSec !== undefined && <div className="text-[11px] text-pm-muted">Block time {blockTimeSec.toFixed(2)} sec</div>}
       </StatShell>
 
-      <StatShell title="Payment operations">
+      <StatShell title="Payment operations" icon={Layers}>
         {!deployed ? (
           <Unavailable text="Contracts not deployed" />
         ) : (

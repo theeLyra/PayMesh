@@ -83,3 +83,11 @@ The testnet addresses (`VITE_PAYMESH_ADDRESS`, `VITE_PAYMESH_START_BLOCK`) are n
 - Send a very small transfer between two wallets you control and confirm it shows in the app and on the explorer.
 - Try one of each feature with tiny amounts before sharing the app.
 - Keep the in-app mainnet banner. It reminds users that transactions are real and that the contract has not had a third-party audit.
+
+## Your Remix deployment
+
+The mainnet contract deployed from Remix is `0xcE3D1b30A337679330dBfF9017D1eCE07FcEd803`, first present at block 32561301. Its runtime code matches `contracts/PayMesh.sol` compiled with Solidity 0.8.28, EVM `cancun` and the optimizer OFF (Remix default), apart from the nine bytes where the USDC address is embedded. Its USDC address is the mainnet USDC at `0x3600000000000000000000000000000000000000`.
+
+To verify the source on the explorer, use the same settings Remix used: compiler 0.8.28, EVM version cancun, optimizer disabled, constructor argument `0x0000000000000000000000003600000000000000000000000000000000000000`. Using 200 optimizer runs will fail verification.
+
+To run the app against it, build with `VITE_NETWORK=mainnet`. `VITE_PAYMESH_ADDRESS_MAINNET` and `VITE_PAYMESH_START_BLOCK_MAINNET` are already set in `.env`.

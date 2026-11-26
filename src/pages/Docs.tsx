@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { cx } from '@/lib/cx'
 import { Link, usePath } from '@/paymesh/router'
 
-const GROUPS: Array<DocPage['group']> = ['Start', 'Payments', 'Reference']
+const GROUPS: Array<DocPage['group']> = ['Start', 'Payments', 'Circle', 'Reference']
 const href = (slug: string) => (slug === 'overview' ? '/docs' : `/docs/${slug}`)
 
 function NavList({ pages, current, onPick }: { pages: DocPage[]; current: string; onPick?: () => void }) {
@@ -103,7 +103,7 @@ export default function Docs() {
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <BackButton fallback="/" className="min-w-[44px] justify-center px-2.5 sm:px-3" iconOnlyOnMobile />
-          <Link to="/" className="flex items-center gap-2.5" aria-label="PayMesh home">
+          <Link to="/" className="flex min-h-[44px] items-center gap-2.5" aria-label="PayMesh home">
             <LogoMark size={30} />
             <Wordmark className="hidden text-lg sm:inline" />
           </Link>

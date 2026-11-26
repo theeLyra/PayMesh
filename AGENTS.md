@@ -56,3 +56,7 @@ bun run dev
 
 ## Mainnet
 The app can target Arc mainnet with `VITE_NETWORK=mainnet` (default is testnet). Mainnet uses separate env keys (`VITE_PAYMESH_ADDRESS_MAINNET`, `VITE_PAYMESH_START_BLOCK_MAINNET`). No mainnet contract has been deployed by Arc Studio: the user deploys it themselves, steps in `docs/mainnet-deploy.md`. Mainnet token addresses (EURC, cirBTC) were read on chain and match the Arc contract-address reference.
+
+Mainnet contract (deployed by the user with Remix): `0xcE3D1b30A337679330dBfF9017D1eCE07FcEd803`, start block 32561301, compiled with the optimizer off. Env keys `VITE_PAYMESH_ADDRESS_MAINNET` / `VITE_PAYMESH_START_BLOCK_MAINNET` are set; the app only uses them when `VITE_NETWORK=mainnet`.
+
+The project now targets Arc mainnet (`VITE_NETWORK=mainnet` in `.env`) with the owner's contract `0xcE3D...d803`, deployed from the owner's wallet `0x26d0E7B091eF87526AB24Bf439613aCaff899274` (creation tx `0x759dd4da...bd2e`, block 32561301). The contract has no owner or admin role, so that wallet has no special powers. To go back to testnet, remove `VITE_NETWORK` from `.env`.

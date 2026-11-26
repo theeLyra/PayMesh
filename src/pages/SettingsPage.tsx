@@ -1,4 +1,5 @@
 import { useAccount, useDisconnect } from 'wagmi'
+import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { useActivity } from '@/paymesh/activityContext'
 import { CHAIN_FACTS, CHAIN_ID, RPC_URL, addressUrl } from '@/paymesh/chain'
@@ -26,6 +27,16 @@ export default function SettingsPage() {
   const { address, chainId, connector, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const { status, head, windowStart, blockTimeSec, settlements } = useActivity()
+
+  const copyContract = async () => {
+    if (!PAYMESH) return
+    try {
+      await navigator.clipboard.writeText(PAYMESH)
+      toast.success('Contract address copied')
+    } catch {
+      toast.error('Could not copy. Select the address and copy it manually.')
+    }
+  }
 
   const clearLocal = (prefix: string, label: string) => {
     Object.keys(localStorage)
@@ -77,16 +88,35 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="p-5">
-          <div className="label mb-2">Contract</div>
-          <Row label="PayMesh">
+          <div className="label mb-2">PayMesh contract</div>
+          <Row label="Network">{CHAIN_FACTS.name}</Row>
+          <Row label="Address">
             {PAYMESH ? (
-              <ExplorerLink href={addressUrl(PAYMESH)}>
+              <span className="inline-flex items-center gap-2">
                 <span className="break-all font-mono text-xs">{PAYMESH}</span>
-              </ExplorerLink>
+                <button
+                  type="button"
+                  aria-label="Copy contract address"
+                  onClick={() => void copyContract()}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-pm-line text-pm-muted hover:text-pm-text"
+                >
+                  <Copy size={14} />
+                </button>
+              </span>
             ) : (
               <Badge tone="warn">Not deployed</Badge>
             )}
           </Row>
+          {PAYMESH && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href={addressUrl(PAYMESH)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center rounded-lg border border-pm-line px-4 text-sm font-medium hover:bg-pm-text/5">
+                View on explorer
+              </a>
+              <a href={`${addressUrl(PAYMESH)}?tab=contract`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center rounded-lg border border-pm-line px-4 text-sm font-medium hover:bg-pm-text/5">
+                Verified source
+              </a>
+            </div>
+          )}
         </Card>
 
         <Card className="p-5">

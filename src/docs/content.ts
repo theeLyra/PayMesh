@@ -3,6 +3,7 @@ import { CHAIN_FACTS, CHAIN_ID, USDC_ADDRESS, addressUrl } from '@/paymesh/chain
 import { PAYMESH, SOURCE_LABELS, START_BLOCK } from '@/paymesh/contracts'
 import { IS_MAINNET } from '@/paymesh/network'
 import { blockText, type DocPage } from './blocks'
+import { circleDocs } from './content-circle'
 import { guideDocs } from './content-guides'
 
 /** viem's export name for the Arc network this deployment uses. */
@@ -214,7 +215,7 @@ function referenceDocs(): DocPage[] {
             { t: 'table', head: ['Question', 'Answer'], rows: [
               ['Does PayMesh charge a fee?', 'No. The contract takes nothing. You only pay network gas, in USDC. Swaps carry the swap provider\'s fee, shown in the quote.'],
               ['Why does Swap say there is no route?', 'Liquidity changes over time. Try a smaller amount or another pair. See [Swap](/docs/swap).'],
-              ['Do swaps show in my dashboard?', 'No. Swaps do not go through the PayMesh contract, so only PayMesh payments count in volume and activity. Your swapped balances show in the wallet card.'],
+              ['Do swaps show in my dashboard?', 'Your swaps appear in Your transactions on the Overview and in Activity under My transactions, with a Swaps filter. They do not count in PayMesh volume because they do not go through the PayMesh contract. See [Swap](/docs/swap).'],
               ['Which network does it use?', IS_MAINNET ? `${CHAIN_FACTS.name} mainnet. Payments move real USDC.` : `${CHAIN_FACTS.name}. This deployment is testnet only.`],
               ['Why can I not pay myself?', 'Self-payments are rejected so volume is not inflated by moving funds between your own address.'],
               ['Can I undo a payment?', 'No. Confirmed onchain payments are final. Only an escrow can be released or refunded before it settles.'],
@@ -248,7 +249,7 @@ function referenceDocs(): DocPage[] {
 }
 
 export function buildDocs(): DocPage[] {
-  return [...guideDocs(), ...referenceDocs()]
+  return [...guideDocs(), ...circleDocs(), ...referenceDocs()]
 }
 
 export interface SearchHit {

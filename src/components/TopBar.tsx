@@ -4,12 +4,14 @@ import { ConnectKitButton } from 'connectkit'
 import { TokenUSDC } from '@web3icons/react'
 import { toast } from 'sonner'
 import { Bell, ChevronDown, Copy, ExternalLink, LogOut, Settings, Wallet } from 'lucide-react'
-import { useActivity } from '@/paymesh/activityContext'
-import { CHAIN_FACTS, CHAIN_ID, addressUrl, txUrl } from '@/paymesh/chain'
-import { fmtUsdc, shortAddress, timeAgo } from '@/paymesh/format'
+import { CHAIN_FACTS, CHAIN_ID, addressUrl } from '@/paymesh/chain'
+import { fmtUsdc, shortAddress } from '@/paymesh/format'
 import { Link, navigate } from '@/paymesh/router'
+import { useNow } from '@/paymesh/useNow'
+import { useWalletHistory } from '@/paymesh/walletHistory'
 import { useUsdcBalance } from '@/paymesh/useTransact'
 import { LogoMark, Wordmark } from './Logo'
+import { WalletTxRow } from './WalletTxRow'
 import { ThemeToggle } from './ThemeToggle'
 import { Skeleton, cx } from './ui'
 
@@ -39,7 +41,7 @@ function Menu({ trigger, children, label, triggerClassName, className }: { trigg
         {trigger}
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(340px,calc(100vw-24px))] rounded-xl border border-pm-line bg-pm-deep p-2 shadow-lg" onClick={() => setOpen(false)}>
+        <div className="fixed inset-x-3 top-[68px] z-50 rounded-xl border border-pm-line bg-pm-deep p-2 shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]" onClick={() => setOpen(false)}>
           {children}
         </div>
       )}
@@ -47,49 +49,63 @@ function Menu({ trigger, children, label, triggerClassName, className }: { trigg
   )
 }
 
+const NO_MORE = () => undefined
+
+/** The bell lists every PayMesh operation for the connected wallet: payments, swaps, escrow, approvals and more. */
 function Notifications() {
   const { address } = useAccount()
-  const { settlements } = useActivity()
-  const key = address ? `paymesh:seen:${address.toLowerCase()}` : ''
+  const { txs, isLoading, error } = useWalletHistory(address, 1, NO_MORE)
+  const now = useNow(10_000)
+  const key = address ? `paymesh:seen-tx:${address.toLowerCase()}` : ''
+  const [openedAt] = useState(() => Math.floor(Date.now() / 1000))
   const [seenOverride, setSeen] = useState<Record<string, number>>({})
-  const seen = key ? (seenOverride[key] ?? Number(localStorage.getItem(key) ?? 0)) : 0
-  const incoming = address ? settlements.filter((s) => s.to.toLowerCase() === address.toLowerCase()).slice(0, 8) : []
-  const unread = incoming.filter((s) => s.blockNumber > seen).length
+  // Until you open the bell once, only transactions made after this page loaded count as new.
+  const stored = key ? localStorage.getItem(key) : null
+  const seen = key ? (seenOverride[key] ?? (stored !== null ? Number(stored) : openedAt)) : 0
+  const rows = txs.filter((t) => !t.dust).slice(0, 8)
+  const unread = rows.filter((t) => t.time > seen).length
   const markSeen = () => {
-    const top = incoming[0]?.blockNumber
+    const top = rows[0]?.time
     if (key && top) {
       localStorage.setItem(key, String(top))
-      setSeen((s) => ({ ...s, [key]: top }))
+      setSeen((v) => ({ ...v, [key]: top }))
     }
   }
   return (
     <div onClickCapture={markSeen} className="relative">
       <Menu
-        label="Notifications"
+        label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
         trigger={
           <span className="relative">
             <Bell className="h-[18px] w-[18px] text-pm-text" />
-            {unread > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-pm-violet px-1 text-[10px] font-bold text-[rgb(var(--pm-on-accent))]">{unread}</span>}
+            {unread > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-pm-violet px-1 text-[10px] font-bold text-[rgb(var(--pm-on-accent))]">{unread > 9 ? '9+' : unread}</span>}
           </span>
         }
       >
-        <div className="px-3 pb-2 pt-2 label">Incoming payments</div>
+        <div className="flex items-center justify-between px-3 pb-1 pt-2">
+          <span className="label">Transactions</span>
+          {address && (
+            <Link to="/activity" className="inline-flex min-h-[32px] items-center text-xs font-semibold text-pm-violet hover:underline">
+              View all
+            </Link>
+          )}
+        </div>
         {!address ? (
-          <p className="px-3 pb-3 text-sm text-pm-muted">Connect a wallet to see payments you receive.</p>
-        ) : incoming.length === 0 ? (
-          <p className="px-3 pb-3 text-sm text-pm-muted">No incoming payments yet.</p>
+          <p className="px-3 pb-3 text-sm text-pm-muted">Connect a wallet to see every transaction you make with PayMesh.</p>
+        ) : isLoading ? (
+          <div className="space-y-2 px-3 pb-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : error && rows.length === 0 ? (
+          <p className="px-3 pb-3 text-sm text-pm-muted">Could not load transactions right now. Retrying automatically.</p>
+        ) : rows.length === 0 ? (
+          <p className="px-3 pb-3 text-sm text-pm-muted">No transactions yet. Payments, swaps, escrow and approvals appear here.</p>
         ) : (
-          <ul>
-            {incoming.map((s) => (
-              <li key={s.id}>
-                <a href={txUrl(s.txHash)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 hover:bg-pm-text/5">
-                  <div>
-                    <div className="tabular text-sm font-semibold text-pm-cyan">+{fmtUsdc(s.amount)} USDC</div>
-                    <div className="font-mono text-[11px] text-pm-muted">from {shortAddress(s.from)}</div>
-                  </div>
-                  <div className="text-[11px] text-pm-muted">{timeAgo(s.timestamp)}</div>
-                </a>
-              </li>
+          <ul className="max-h-[60vh] divide-y divide-pm-line/60 overflow-y-auto">
+            {rows.map((tx) => (
+              <WalletTxRow key={tx.hash} tx={tx} now={now} />
             ))}
           </ul>
         )}
@@ -186,8 +202,8 @@ export function BalanceChip() {
 
 export function TopBar() {
   return (
-    <header className="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between gap-3 border-b border-pm-line bg-pm-bg px-4 pb-3 pt-8 sm:-mx-6 sm:px-6 md:static md:mx-0 md:mb-6 md:border-0 md:p-0">
-      <Link to="/" className="flex items-center gap-2 md:hidden" aria-label="PayMesh home">
+    <header className="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between gap-3 border-b border-pm-line bg-pm-bg px-4 py-3 sm:-mx-6 sm:px-6 md:static md:mx-0 md:mb-6 md:border-0 md:p-0">
+      <Link to="/" className="flex min-h-[44px] items-center gap-2 md:hidden" aria-label="PayMesh home">
         <LogoMark size={34} />
         <Wordmark className="hidden text-lg min-[380px]:inline" />
       </Link>

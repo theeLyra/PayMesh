@@ -14,6 +14,8 @@ import {
   Users,
   Layers,
   type LucideIcon,
+  Landmark,
+  Waypoints,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -27,6 +29,8 @@ export const NAV: NavItem[] = [
   { path: '/dashboard', label: 'Payment Network', short: 'Network', icon: Globe },
   { path: '/transfers', label: 'Transfers', short: 'Transfers', icon: Send },
   { path: '/swap', label: 'Swap', short: 'Swap', icon: ArrowLeftRight },
+  { path: '/bridge', label: 'Cross-chain', short: 'Cross-chain', icon: Waypoints },
+  { path: '/gateway', label: 'Gateway', short: 'Gateway', icon: Landmark },
   { path: '/recipients', label: 'Recipients', short: 'Recipients', icon: Users },
   { path: '/links', label: 'Payment Links', short: 'Links', icon: Link2 },
   { path: '/batch', label: 'Batch Payments', short: 'Batch', icon: Layers },

@@ -7,6 +7,8 @@ import { useActivity } from '@/paymesh/activityContext'
 import { PAYMESH } from '@/paymesh/contracts'
 import { encodeCategory, tryParseUsdc } from '@/paymesh/format'
 import { useSearch } from '@/paymesh/router'
+import { ScanLine } from 'lucide-react'
+import { ScanModal } from '@/components/ScanModal'
 import { useUsdcBalance, useTransact } from '@/paymesh/useTransact'
 import { AmountInput, CategorySelect, FormError, amountError } from '@/components/forms'
 import { FeedRow } from '@/components/TransactionFeed'
@@ -25,7 +27,11 @@ export default function Transfers() {
     const preset = search.get('to') ?? ''
     return isAddress(preset) ? preset : ''
   })
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(() => {
+    const preset = search.get('amount') ?? ''
+    return /^\d*\.?\d{0,6}$/.test(preset) ? preset : ''
+  })
+  const [scanning, setScanning] = useState(false)
   const [category, setCategory] = useState('General')
   const [memo, setMemo] = useState('')
 
@@ -58,6 +64,16 @@ export default function Transfers() {
 
   return (
     <div className="">
+      {scanning && (
+        <ScanModal
+          onClose={() => setScanning(false)}
+          onResult={(r) => {
+            setTo(r.to)
+            if (r.amount) setAmount(r.amount)
+            setScanning(false)
+          }}
+        />
+      )}
       <PageHeader title="Transfers" subtitle="Send USDC to any wallet through the PayMesh contract. Every transfer is recorded onchain with a category." />
       <NotDeployed />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,460px)_1fr]">
@@ -65,7 +81,18 @@ export default function Transfers() {
           <WalletGate prompt="Connect your wallet to send USDC.">
             <div className="space-y-4">
               <Field label="Recipient wallet">
-                <input className="input font-mono text-sm" placeholder="0x..." value={to} onChange={(e) => setTo(e.target.value.trim())} spellCheck={false} />
+                <div className="flex gap-2">
+                  <input className="input font-mono text-sm" placeholder="0x..." value={to} onChange={(e) => setTo(e.target.value.trim())} spellCheck={false} />
+                  <button
+                    type="button"
+                    onClick={() => setScanning(true)}
+                    aria-label="Scan a payment QR code"
+                    title="Scan a payment QR code"
+                    className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-[10px] border border-pm-line bg-pm-panel text-pm-text hover:bg-pm-text/5"
+                  >
+                    <ScanLine className="h-5 w-5" />
+                  </button>
+                </div>
               </Field>
               <FormError>{toErr}</FormError>
               <AmountInput value={amount} onChange={setAmount} />

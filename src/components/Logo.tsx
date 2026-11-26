@@ -12,7 +12,7 @@ const PIXELS = ['M10.4 38.4H15.2L13.6 43.4H8.8Z', 'M3.2 44.4H7.8L6.2 49.2H1.6Z',
  * PayMesh mark: a slanted "P" ribbon with trailing blocks. Colours come from the dashboard theme tokens,
  * so it follows light and dark mode. `size` is the mark's height in pixels.
  */
-export function LogoMark({ size = 32 }: { size?: number }) {
+export function LogoMark({ size = 32, mono = false }: { size?: number; mono?: boolean }) {
   // One clip id per instance: a shared id breaks when the first copy sits inside a hidden element (the desktop sidebar on phones).
   const clipId = `pm-p-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   return (
@@ -22,9 +22,9 @@ export function LogoMark({ size = 32 }: { size?: number }) {
           <path d={P_SHAPE} />
         </clipPath>
       </defs>
-      <path d={P_SHAPE} className="fill-pm-violet" />
-      <path d={P_SHADE} className="fill-pm-indigo" clipPath={`url(#${clipId})`} />
-      <g className="fill-pm-violet stroke-pm-violet" strokeWidth="0.8" strokeLinejoin="round">
+      <path d={P_SHAPE} className={mono ? 'fill-white' : 'fill-pm-violet'} />
+      <path d={P_SHADE} className={mono ? 'fill-white' : 'fill-pm-indigo'} fillOpacity={mono ? 0.55 : 1} clipPath={`url(#${clipId})`} />
+      <g className={mono ? 'fill-white stroke-white' : 'fill-pm-violet stroke-pm-violet'} strokeWidth="0.8" strokeLinejoin="round">
         {PIXELS.map((d) => (
           <path key={d} d={d} />
         ))}

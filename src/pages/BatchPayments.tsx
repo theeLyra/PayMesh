@@ -117,7 +117,7 @@ export default function BatchPayments() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="label">Recipients ({rows.length})</span>
-                  <button onClick={() => setPasteOpen((o) => !o)} className="inline-flex items-center gap-1.5 text-xs font-semibold text-pm-violet hover:text-pm-text">
+                  <button onClick={() => setPasteOpen((o) => !o)} className="-my-2 inline-flex min-h-[44px] items-center gap-1.5 text-xs font-semibold text-pm-violet hover:text-pm-text">
                     <ClipboardPaste className="h-3.5 w-3.5" /> Paste a list
                   </button>
                 </div>

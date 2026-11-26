@@ -1,4 +1,4 @@
-import { BookOpen, ChevronsLeft, ChevronsRight, X } from 'lucide-react'
+import { BookOpen, ChevronsLeft, ChevronsRight, Ellipsis, X } from 'lucide-react'
 import { NAV, Link, usePath } from '@/paymesh/router'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -20,7 +20,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
       )}
     >
       <div className={cx('mb-6 flex items-center', expanded ? 'px-2' : 'justify-center')}>
-        <Link to="/" aria-label="PayMesh home">
+        <Link to="/" aria-label="PayMesh home" className="flex min-h-[44px] items-center">
           <Logo compact={!expanded} />
         </Link>
       </div>
@@ -74,10 +74,11 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
   )
 }
 
-/** Bottom navigation for phones: four primary destinations plus a sheet with everything else. */
+/** Bottom navigation for phones: Network, Swap, Cross-chain and Escrow plus a sheet with everything else. */
 export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMoreOpen: (v: boolean) => void }) {
   const path = usePath()
-  const primary = NAV.filter((n) => ['/dashboard', '/transfers', '/links', '/escrow'].includes(n.path))
+  const order = ['/dashboard', '/swap', '/bridge', '/escrow']
+  const primary = order.map((p) => NAV.find((n) => n.path === p)).filter((n): n is (typeof NAV)[number] => Boolean(n))
   const moreActive = !primary.some((n) => n.path === path)
   return (
     <>
@@ -115,7 +116,10 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
           </div>
         </div>
       )}
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-pm-line bg-pm-panel pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Primary">
+      <nav
+        className="fixed inset-x-2 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 flex gap-0.5 rounded-2xl border border-pm-line bg-pm-panel p-1 shadow-lg md:hidden"
+        aria-label="Primary"
+      >
         {primary.map((item) => {
           const Icon = item.icon
           const active = item.path === path && !moreOpen
@@ -124,18 +128,20 @@ export function MobileNav({ moreOpen, setMoreOpen }: { moreOpen: boolean; setMor
               key={item.path}
               to={item.path}
               onClick={() => setMoreOpen(false)}
-              className={cx('flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium', active ? 'text-pm-violet' : 'text-pm-muted')}
+              aria-current={active ? 'page' : undefined}
+              className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold', active ? 'bg-pm-violet/10 text-pm-violet' : 'text-pm-muted hover:bg-pm-text/5')}
             >
-              <Icon className="h-5 w-5" />
-              {item.short}
+              <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.9} />
+              <span className="whitespace-nowrap tracking-tight">{item.short}</span>
             </Link>
           )
         })}
         <button
           onClick={() => setMoreOpen(!moreOpen)}
-          className={cx('flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium', moreOpen || moreActive ? 'text-pm-violet' : 'text-pm-muted')}
+          aria-expanded={moreOpen}
+          className={cx('flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold', moreOpen || moreActive ? 'bg-pm-violet/10 text-pm-violet' : 'text-pm-muted hover:bg-pm-text/5')}
         >
-          <span className="flex h-5 w-5 items-center justify-center text-lg leading-none">&#8943;</span>
+          <Ellipsis className="h-[22px] w-[22px]" strokeWidth={moreOpen || moreActive ? 2.4 : 1.9} />
           More
         </button>
       </nav>

@@ -128,6 +128,19 @@ export function guideDocs(): DocPage[] {
           title: 'Saved recipients',
           blocks: [{ t: 'p', text: 'The [Recipients](/recipients) page keeps an address book in your browser. Choose Send next to a saved recipient to prefill the transfer form. Saved recipients never leave your device.' }],
         },
+        {
+          id: 'receive-qr',
+          title: 'Receive and scan to pay',
+          blocks: [
+            { t: 'p', text: 'On the Overview, select **Receive** to show a QR code for your wallet. Anyone can scan it with their phone camera. It opens PayMesh on the Transfers page with your address filled in, and an amount too if you entered one, so they only need to connect and confirm.'.replace(/\*\*/g, '') },
+            { t: 'ul', items: [
+              'The Payment link tab is the best choice for people paying you with PayMesh. You can add an optional amount.',
+              'The Wallet address tab shows a plain address QR for wallet apps that scan addresses.',
+              'To pay someone else, open Transfers and select the scan button next to Recipient wallet. Browsers that support QR reading scan inside the page. Otherwise use your phone camera app.',
+              'Always check the recipient address and amount before you confirm. A QR code only fills in the form.',
+            ] },
+          ],
+        },
       ],
     },
     {
@@ -299,14 +312,14 @@ export function guideDocs(): DocPage[] {
               t: 'ol',
               items: [
                 'Open [Swap](/swap) and connect your wallet.',
-                'Choose the token you pay with and the token you want. The arrow button flips the pair.',
+                'Choose the token you pay with and the token you want from the list with each token\'s logo and your balance. The arrow button flips the pair.',
                 'Enter an amount, or select Max. Max for USDC keeps 0.10 USDC back, because USDC also pays network fees on Arc.',
                 'Pick a slippage tolerance: 0.5%, 1% or 3%.',
-                'Select Review quote. You see the estimated amount you receive, the minimum you receive after slippage, the rate, the fees and the route.',
-                'Select the Swap button to confirm. Your wallet asks you to sign, and the page shows the result with a link to the explorer.',
+                'The best price loads on its own as you type and keeps refreshing. You see the amount you receive, the live rate, the minimum after slippage, the fees and the route.',
+                'Select the Swap button to confirm. The live status shows each step as it happens: any permit signature or approval, the swap transaction and its onchain confirmation, with explorer links.',
               ],
             },
-            { t: 'p', text: 'Nothing is sent until you press the Swap button. If you change the amount, the pair or the slippage after reviewing, the quote is discarded and you review a new one. A quote is also tied to the connected wallet account.' },
+            { t: 'p', text: 'Nothing is sent until you press the Swap button. If you change the amount, the pair or the slippage, a new quote loads. A quote is also tied to the connected wallet account.' },
           ],
         },
         {
@@ -326,6 +339,18 @@ export function guideDocs(): DocPage[] {
           title: 'Providers and terms',
           blocks: [
             { t: 'p', text: 'Each swap is routed through a swap service provider, either a third-party aggregator such as LiFi or Circle. The provider can differ from route to route and is subject to change. The quote shows which provider and which steps it uses. By swapping, you are subject to the aggregator\'s terms of service.' },
+          ],
+        },
+        {
+          id: 'swap-history',
+          title: 'Swap history',
+          blocks: [
+            { t: 'p', text: 'Swaps run through the swap aggregator, not the PayMesh contract. They still appear in your wallet history: on the [Activity](/activity) page, open My transactions and pick the Swaps filter. Every swap you ever made with this wallet is listed, each as its own row, including swaps made before you used PayMesh.' },
+            { t: 'ul', items: [
+              'The list is read from the Arc block explorer for your connected wallet, so it works on any device and survives clearing your browser.',
+              'Swaps are not counted in PayMesh volume, payment counts or analytics, because they do not go through the PayMesh contract.',
+              'A new swap can take a few seconds to show up while the explorer indexes it.',
+            ] },
           ],
         },
         {
@@ -360,6 +385,7 @@ export function guideDocs(): DocPage[] {
           title: 'Where the data comes from',
           blocks: [
             { t: 'p', text: 'Volume, counts and the transaction feed are built from `Settled` events read from the chain. Nothing is estimated or simulated. The dashboard shows how far the app has read, and says so while it is still catching up.' },
+            { t: 'p', text: 'When your wallet is connected, the Overview shows **Your transactions** and [Activity](/activity) opens on **My transactions**. That list is your own wallet history from the Arc block explorer: payments, swaps, approvals and plain transfers, each transaction as its own row, with filters, an export and a Load older button. Network payments, the second tab, shows verified PayMesh payments from every wallet. The bell in the top bar lists the same transactions for your wallet, newest first, and shows a count of new ones since you last opened it.'.replace(/\*\*/g, '') },
           ],
         },
         {

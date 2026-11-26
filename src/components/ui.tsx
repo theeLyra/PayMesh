@@ -74,7 +74,7 @@ export function Badge({ tone = 'muted', children }: { tone?: 'good' | 'warn' | '
     violet: 'border-pm-violet/40 bg-pm-violet/10 text-pm-violet',
     muted: 'border-pm-line bg-pm-text/[0.05] text-pm-muted',
   }
-  return <span className={cx('inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider', tones[tone])}>{children}</span>
+  return <span className={cx('inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider', tones[tone])}>{children}</span>
 }
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {

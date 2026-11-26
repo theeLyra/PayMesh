@@ -54,3 +54,43 @@ export function BarChart({ values, labels, height = 180 }: { values: number[]; l
     </div>
   )
 }
+
+/** A smooth static area chart with grid lines, used for the volume card. */
+export function AreaChart({ values, height = 200, className }: { values: number[]; height?: number; className?: string }) {
+  const w = 600
+  const pad = { t: 12, b: 8 }
+  const max = Math.max(...values, 0)
+  const top = max > 0 ? max * 1.15 : 1
+  const x = (i: number) => (values.length < 2 ? 0 : (i / (values.length - 1)) * w)
+  const y = (v: number) => pad.t + (1 - v / top) * (height - pad.t - pad.b)
+  const pts = values.map((v, i) => [x(i), y(v)] as const)
+  // Catmull-Rom style smoothing through every point.
+  const line = pts.reduce((d, [px, py], i) => {
+    if (i === 0) return `M${px.toFixed(1)},${py.toFixed(1)}`
+    const [x0, y0] = pts[i - 1]
+    const cx = (x0 + px) / 2
+    return `${d} C${cx.toFixed(1)},${y0.toFixed(1)} ${cx.toFixed(1)},${py.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`
+  }, '')
+  const last = pts[pts.length - 1]
+  const id = 'area-fill'
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className={className} style={{ height, width: '100%' }} role="img" aria-label="Volume over the last 24 hours">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(var(--pm-accent))" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="rgb(var(--pm-accent))" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75].map((f) => (
+        <line key={f} x1="0" x2={w} y1={pad.t + f * (height - pad.t - pad.b)} y2={pad.t + f * (height - pad.t - pad.b)} stroke="rgb(var(--pm-line))" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+      ))}
+      {pts.length >= 2 && (
+        <>
+          <path d={`${line} L${w},${height} L0,${height} Z`} fill={`url(#${id})`} />
+          <path d={line} fill="none" stroke="rgb(var(--pm-accent))" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </>
+      )}
+      {last && max > 0 && <circle cx={last[0]} cy={last[1]} r="4" fill="rgb(var(--pm-accent))" stroke="rgb(var(--pm-panel))" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+    </svg>
+  )
+}

@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ExternalLink } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ExternalLink } from 'lucide-react'
 import type { Address } from 'viem'
 import type { Settlement } from '@/paymesh/activityContext'
 import { txUrl } from '@/paymesh/chain'
@@ -19,8 +19,8 @@ export function FeedRow({ s, me, now }: { s: Settlement; me?: Address; now: numb
       <div
         className={cx(
           'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-          sent && 'bg-pm-violet/12 text-pm-violet',
-          received && 'bg-pm-cyan/12 text-pm-cyan',
+          sent && 'bg-pm-violet/10 text-pm-violet',
+          received && 'bg-pm-cyan/10 text-pm-cyan',
           !sent && !received && 'bg-pm-text/[0.06] text-pm-muted',
         )}
       >
@@ -67,10 +67,10 @@ export function TransactionFeed({ settlements, me, limit = 6, loading, deployed,
   const now = useNow(10_000)
   const rows = settlements.slice(0, limit)
   return (
-    <section className="glass flex h-full min-h-[320px] flex-col rounded-xl">
+    <section className="glass flex h-full min-h-[320px] flex-col rounded-2xl">
       <div className="flex items-center justify-between border-b border-pm-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-pm-text">Recent transactions</h2>
-        <Link to="/activity" className="text-xs font-semibold text-pm-violet hover:underline">
+        <h2 className="label">Recent transactions</h2>
+        <Link to="/activity" className="-my-2 inline-flex min-h-[44px] items-center px-1 text-xs font-semibold text-pm-violet hover:underline">
           View all
         </Link>
       </div>
@@ -82,13 +82,13 @@ export function TransactionFeed({ settlements, me, limit = 6, loading, deployed,
         </div>
       ) : rows.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1 px-6 py-10 text-center">
-          <div className="text-base font-semibold text-pm-text">{!deployed ? 'Contract not deployed' : error ? 'Network unavailable' : 'No payments yet'}</div>
+          <div className="text-base font-semibold text-pm-text">{!deployed ? 'Contract not deployed' : error ? 'Network unavailable' : 'No transactions yet'}</div>
           <p className="text-pretty text-sm text-pm-muted">
             {!deployed
               ? 'Add the PayMesh contract address to start reading verified payments.'
               : error
                 ? 'The latest payments could not be read. Retrying automatically.'
-                : 'Verified USDC payments from the PayMesh contract appear here.'}
+                : 'Verified PayMesh payments appear here.'}
           </p>
         </div>
       ) : (

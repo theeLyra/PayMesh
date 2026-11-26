@@ -13,6 +13,9 @@ Built with [Arc Studio](https://studio.arc.io)
 - The app itself lives at `/dashboard` and the pages under it
 - Light and dark theme, switchable from the header or Settings
 - Built-in token swap for USDC, EURC and cirBTC on Arc, powered by Circle's swap aggregator (Circle App Kit), with live quotes, slippage control and wallet-signed execution
+- Cross-chain USDC with Circle CCTP V2 (beta) and a Circle Gateway unified balance (beta)
+- Your transactions: the connected wallet's full history (payments, swaps, approvals, transfers), one row each
+- Receive by QR code (payment link or wallet address) and scan to pay, with the recipient and amount filled in
 - Transfers, saved recipients, payment links, batch payments, split payments, scheduled payments and escrow
 - Analytics for volume, payment counts, categories and top recipients
 - Developer page with contract addresses, ABIs and integration snippets

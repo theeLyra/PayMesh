@@ -21,7 +21,7 @@ export interface DocPage {
   slug: string
   title: string
   summary: string
-  group: 'Start' | 'Payments' | 'Reference'
+  group: 'Start' | 'Payments' | 'Circle' | 'Reference'
   sections: DocSection[]
 }
 
@@ -74,7 +74,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
     <div className="my-4 overflow-hidden rounded-lg border border-pm-line bg-pm-panel">
       <div className="flex items-center justify-between border-b border-pm-line px-3 py-1.5 text-xs text-pm-muted">
         <span>{lang ?? 'code'}</span>
-        <button onClick={copy} className="inline-flex min-h-[32px] items-center gap-1.5 rounded px-2 hover:bg-pm-text/5 hover:text-pm-text" aria-label="Copy code">
+        <button onClick={copy} className="inline-flex min-h-[40px] items-center gap-1.5 rounded px-2 hover:bg-pm-text/5 hover:text-pm-text" aria-label="Copy code">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           {copied ? 'Copied' : 'Copy'}
         </button>

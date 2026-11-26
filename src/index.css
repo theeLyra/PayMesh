@@ -74,6 +74,13 @@ body {
   border: 2px solid rgb(var(--pm-bg));
 }
 
+@layer base {
+  /* Grid items default to min-width:auto, so one long address or chart can stretch a whole column past the screen. */
+  .grid > * {
+    min-width: 0;
+  }
+}
+
 @layer components {
   /* Flat card surface. Named "glass" for historical reasons; it is a plain bordered panel now. */
   .glass {

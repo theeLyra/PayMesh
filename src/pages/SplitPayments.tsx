@@ -138,7 +138,7 @@ export default function SplitPayments() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="label">Recipients</span>
-                    <button onClick={even} className="text-xs font-semibold text-pm-violet hover:text-pm-text">
+                    <button onClick={even} className="-my-2 min-h-[44px] text-xs font-semibold text-pm-violet hover:text-pm-text">
                       Split evenly
                     </button>
                   </div>

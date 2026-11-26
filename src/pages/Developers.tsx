@@ -59,7 +59,7 @@ await wallet.writeContract({
         title="Developer API"
         subtitle="PayMesh is one onchain contract. Integrate straight from your own app with any EVM library. There is no hosted REST service in between."
         action={
-          <Link to="/docs/developer-guide" className="text-sm font-semibold text-pm-violet hover:underline">
+          <Link to="/docs/developer-guide" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-pm-violet hover:underline">
             Read the developer guide
           </Link>
         }
